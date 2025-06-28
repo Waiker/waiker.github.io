@@ -14,11 +14,12 @@
     h1 {
       text-align: center;
     }
-    #note {
-      text-align: center;
-      font-size: 0.9rem;
+    .note {
+      font-size: 0.8rem;
       color: #666;
-      margin-bottom: 1rem;
+      text-align: center;
+      margin: 0 0 0.8rem 0;
+      font-style: italic;
     }
     #search {
       display: block;
@@ -50,7 +51,7 @@
 <body>
   <h1>Каталог курсов</h1>
   <input type="text" id="search" placeholder="Поиск курса по слову и автору...">
-  <div id="note">При нажатии на курс сразу откроется пост в канале. Только для вступивших в приват</div>
+  <p class="note">При нажатии на курс сразу откроется пост в канале. Только для вступивших в приват</p>
   <div id="catalog"></div>
 
   <script>
