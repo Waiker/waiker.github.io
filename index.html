@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Каталог товаров</title>
+  <title>Каталог курсов приватного канала</title>
   <style>
     body {
       font-family: sans-serif;
@@ -33,90 +33,51 @@
       padding: 1rem;
       border-radius: 0.5rem;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      cursor: pointer;
     }
-    #details {
-      display: none;
-      max-width: 600px;
-      margin: 1rem auto;
-      background: white;
-      padding: 1rem;
-      border-radius: 0.5rem;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .back-btn {
-      margin-top: 1rem;
-      display: inline-block;
-      padding: 0.5rem 1rem;
-      background: #007bff;
-      color: white;
-      border-radius: 0.3rem;
+    .item a {
+      color: inherit;
       text-decoration: none;
-      cursor: pointer;
+      display: block;
     }
   </style>
 </head>
 <body>
-  <h1>Каталог</h1>
-  <input type="text" id="search" placeholder="Поиск товара...">
+  <h1>Каталог курсов</h1>
+  <input type="text" id="search" placeholder="Поиск курса по слову и автору...">
+  <div><p>При нажатии на курс сразу откроется пост с курсом. Только для вступивших в приват</p></div>
   <div id="catalog"></div>
 
-  <div id="details">
-    <h2 id="detail-title"></h2>
-    <p><strong>Описание:</strong> <span id="detail-desc">(пока пусто)</span></p>
-    <p><strong>Ссылка на пост:</strong> <a id="detail-link" href="#" target="_blank"></a></p>
-    <div class="back-btn" onclick="showCatalog()">Назад</div>
-  </div>
-
   <script>
-    let allItems = [];
-
     async function loadItems() {
       const res = await fetch('items.txt?' + Date.now());
       const text = await res.text();
-      const lines = text.split('\n').map(x => x.trim()).filter(Boolean);
+      const lines = text.split('\n').map(line => line.trim()).filter(line => line);
       const items = [];
-      for (let i = 0; i < lines.length; i += 2) {
-        items.push({
-          title: lines[i],
-          link: lines[i+1] || '#'
-        });
+      for (let i = 0; i < lines.length - 1; i += 2) {
+        items.push({ name: lines[i], url: lines[i + 1] });
       }
-      allItems = items;
       return items;
     }
 
     function renderItems(items) {
       const catalog = document.getElementById('catalog');
       catalog.innerHTML = '';
-      items.forEach((item, index) => {
+      items.forEach(({ name, url }) => {
         const div = document.createElement('div');
         div.className = 'item';
-        div.textContent = item.title;
-        div.onclick = () => showDetails(index);
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.textContent = name;
+        div.appendChild(a);
         catalog.appendChild(div);
       });
     }
 
-    function showDetails(index) {
-      const item = allItems[index];
-      document.getElementById('detail-title').textContent = item.title;
-      document.getElementById('detail-link').href = item.link;
-      document.getElementById('detail-link').textContent = item.link;
-      document.getElementById('catalog').style.display = 'none';
-      document.getElementById('search').style.display = 'none';
-      document.getElementById('details').style.display = 'block';
-    }
-
-    function showCatalog() {
-      document.getElementById('details').style.display = 'none';
-      document.getElementById('catalog').style.display = 'grid';
-      document.getElementById('search').style.display = 'block';
-    }
-
     document.getElementById('search').addEventListener('input', async (e) => {
       const query = e.target.value.toLowerCase();
-      const filtered = allItems.filter(item => item.title.toLowerCase().includes(query));
+      const items = await loadItems();
+      const filtered = items.filter(({ name }) => name.toLowerCase().includes(query));
       renderItems(filtered);
     });
 
