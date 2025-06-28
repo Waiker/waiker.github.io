@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Каталог товаров</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 1rem;
+    }
+    h1 {
+      text-align: center;
+    }
+    #search {
+      display: block;
+      margin: 0 auto 1rem;
+      padding: 0.5rem;
+      width: 80%;
+      font-size: 1rem;
+    }
+    #catalog {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .item {
+      background: white;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <h1>Каталог</h1>
+  <input type="text" id="search" placeholder="Поиск товара...">
+  <div id="catalog"></div>
+
+  <script>
+    async function loadItems() {
+      const res = await fetch('items.txt?' + Date.now());
+      const text = await res.text();
+      return text.split('\n').map(item => item.trim()).filter(item => item.length);
+    }
+
+    function renderItems(items) {
+      const catalog = document.getElementById('catalog');
+      catalog.innerHTML = '';
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.textContent = item;
+        catalog.appendChild(div);
+      });
+    }
+
+    document.getElementById('search').addEventListener('input', async (e) => {
+      const query = e.target.value.toLowerCase();
+      const items = await loadItems();
+      const filtered = items.filter(item => item.toLowerCase().includes(query));
+      renderItems(filtered);
+    });
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      const items = await loadItems();
+      renderItems(items);
+    });
+  </script>
+</body>
+</html>
