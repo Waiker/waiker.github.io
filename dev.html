@@ -42,6 +42,7 @@
     }
     #watching-list .item {
       background: #fffbe8;
+      margin-bottom: 0.5rem;
     }
     #catalog {
       display: grid;
@@ -58,6 +59,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 0.5rem;
     }
     .item a {
       color: inherit;
@@ -74,6 +76,22 @@
     .bookmarked {
       color: #f39c12;
     }
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.3rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 999;
+    }
+    #toast.show {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
@@ -87,6 +105,8 @@
   </div>
 
   <div id="catalog"></div>
+
+  <div id="toast">Добавлено в закладки</div>
 
   <script>
     const STORAGE_KEY = 'bookmarkedCourses';
@@ -118,15 +138,26 @@
       return getBookmarks().includes(url);
     }
 
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1500);
+    }
+
     function toggleBookmark(name, url) {
       let bookmarks = getBookmarks();
-      if (bookmarks.includes(url)) {
+      const wasBookmarked = bookmarks.includes(url);
+      if (wasBookmarked) {
         bookmarks = bookmarks.filter(u => u !== url);
       } else {
         bookmarks.push(url);
+        showToast('Добавлено в закладки');
       }
       saveBookmarks(bookmarks);
-      renderItems(window.allItems);
+      const query = document.getElementById('search').value.toLowerCase();
+      const filtered = window.allItems.filter(({ name }) => name.toLowerCase().includes(query));
+      renderItems(filtered);
       renderWatchingNow(window.allItems);
     }
 
@@ -137,19 +168,19 @@
         const div = document.createElement('div');
         div.className = 'item';
 
-        const a = document.createElement('a');
-        a.href = url;
-        a.target = '_blank';
-        a.textContent = name;
-
         const bookmarkBtn = document.createElement('button');
         bookmarkBtn.className = 'bookmark-btn';
         bookmarkBtn.innerHTML = isBookmarked(url) ? '★' : '☆';
         if (isBookmarked(url)) bookmarkBtn.classList.add('bookmarked');
         bookmarkBtn.onclick = () => toggleBookmark(name, url);
 
-        div.appendChild(a);
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.textContent = name;
+
         div.appendChild(bookmarkBtn);
+        div.appendChild(a);
         catalog.appendChild(div);
       });
     }
@@ -168,16 +199,19 @@
       bookmarkedItems.forEach(({ name, url }) => {
         const div = document.createElement('div');
         div.className = 'item';
-        const a = document.createElement('a');
-        a.href = url;
-        a.target = '_blank';
-        a.textContent = name;
+
         const bookmarkBtn = document.createElement('button');
         bookmarkBtn.className = 'bookmark-btn bookmarked';
         bookmarkBtn.innerHTML = '★';
         bookmarkBtn.onclick = () => toggleBookmark(name, url);
-        div.appendChild(a);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.textContent = name;
+
         div.appendChild(bookmarkBtn);
+        div.appendChild(a);
         list.appendChild(div);
       });
     }
