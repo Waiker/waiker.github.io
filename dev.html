@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Каталог курсов приватного канала</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 1rem;
+    }
+    h1 {
+      text-align: center;
+    }
+    .note {
+      font-size: 0.8rem;
+      color: #666;
+      text-align: center;
+      margin: 0 0 0.8rem 0;
+      font-style: italic;
+    }
+    #search {
+      display: block;
+      margin: 0 auto 1rem;
+      padding: 0.5rem;
+      width: 80%;
+      font-size: 1rem;
+    }
+    #watching-now {
+      max-width: 600px;
+      margin: 1rem auto;
+      padding: 0.5rem;
+      background: #fff8cc;
+      border: 1px solid #e0c400;
+      border-radius: 0.5rem;
+    }
+    #watching-now h2 {
+      margin-top: 0;
+      font-size: 1.1rem;
+    }
+    #watching-list .item {
+      background: #fffbe8;
+    }
+    #catalog {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .item {
+      background: white;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .item a {
+      color: inherit;
+      text-decoration: none;
+      flex: 1;
+    }
+    .bookmark-btn {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #888;
+    }
+    .bookmarked {
+      color: #f39c12;
+    }
+  </style>
+</head>
+<body>
+  <h1>Каталог курсов</h1>
+  <input type="text" id="search" placeholder="Поиск курса по слову и автору...">
+  <p class="note">При нажатии на курс откроется пост в канале. Только для вступивших в приват</p>
+
+  <div id="watching-now" style="display:none">
+    <h2>Смотрю сейчас</h2>
+    <div id="watching-list"></div>
+  </div>
+
+  <div id="catalog"></div>
+
+  <script>
+    const STORAGE_KEY = 'bookmarkedCourses';
+
+    async function loadItems() {
+      const res = await fetch('items.txt?' + Date.now());
+      const text = await res.text();
+      const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+      const items = [];
+      for (let i = 0; i < lines.length - 1; i += 2) {
+        items.push({ name: lines[i], url: lines[i + 1] });
+      }
+      return items;
+    }
+
+    function getBookmarks() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveBookmarks(bookmarks) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks));
+    }
+
+    function isBookmarked(url) {
+      return getBookmarks().includes(url);
+    }
+
+    function toggleBookmark(name, url) {
+      let bookmarks = getBookmarks();
+      if (bookmarks.includes(url)) {
+        bookmarks = bookmarks.filter(u => u !== url);
+      } else {
+        bookmarks.push(url);
+      }
+      saveBookmarks(bookmarks);
+      renderItems(window.allItems);
+      renderWatchingNow(window.allItems);
+    }
+
+    function renderItems(items) {
+      const catalog = document.getElementById('catalog');
+      catalog.innerHTML = '';
+      items.forEach(({ name, url }) => {
+        const div = document.createElement('div');
+        div.className = 'item';
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.textContent = name;
+
+        const bookmarkBtn = document.createElement('button');
+        bookmarkBtn.className = 'bookmark-btn';
+        bookmarkBtn.innerHTML = isBookmarked(url) ? '★' : '☆';
+        if (isBookmarked(url)) bookmarkBtn.classList.add('bookmarked');
+        bookmarkBtn.onclick = () => toggleBookmark(name, url);
+
+        div.appendChild(a);
+        div.appendChild(bookmarkBtn);
+        catalog.appendChild(div);
+      });
+    }
+
+    function renderWatchingNow(items) {
+      const container = document.getElementById('watching-now');
+      const list = document.getElementById('watching-list');
+      const bookmarks = getBookmarks();
+      list.innerHTML = '';
+      const bookmarkedItems = items.filter(item => bookmarks.includes(item.url));
+      if (bookmarkedItems.length === 0) {
+        container.style.display = 'none';
+        return;
+      }
+      container.style.display = 'block';
+      bookmarkedItems.forEach(({ name, url }) => {
+        const div = document.createElement('div');
+        div.className = 'item';
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.textContent = name;
+        const bookmarkBtn = document.createElement('button');
+        bookmarkBtn.className = 'bookmark-btn bookmarked';
+        bookmarkBtn.innerHTML = '★';
+        bookmarkBtn.onclick = () => toggleBookmark(name, url);
+        div.appendChild(a);
+        div.appendChild(bookmarkBtn);
+        list.appendChild(div);
+      });
+    }
+
+    document.getElementById('search').addEventListener('input', async (e) => {
+      const query = e.target.value.toLowerCase();
+      const filtered = window.allItems.filter(({ name }) => name.toLowerCase().includes(query));
+      renderItems(filtered);
+    });
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      window.allItems = await loadItems();
+      renderItems(window.allItems);
+      renderWatchingNow(window.allItems);
+    });
+  </script>
+</body>
+</html>
