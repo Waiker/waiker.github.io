@@ -28,6 +28,22 @@
       width: 80%;
       font-size: 1rem;
     }
+    #watching-now {
+      max-width: 600px;
+      margin: 1rem auto;
+      padding: 0.5rem;
+      background: #fff8cc;
+      border: 1px solid #e0c400;
+      border-radius: 0.5rem;
+    }
+    #watching-now h2 {
+      margin-top: 0;
+      font-size: 1.1rem;
+    }
+    #watching-list .item {
+      background: #fffbe8;
+      margin-bottom: 0.5rem;
+    }
     #catalog {
       display: grid;
       grid-template-columns: 1fr;
@@ -40,38 +56,61 @@
       padding: 1rem;
       border-radius: 0.5rem;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
     }
     .item a {
       color: inherit;
       text-decoration: none;
-      display: block;
+      flex: 1;
+    }
+    .bookmark-btn {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #888;
+    }
+    .bookmarked {
+      color: #f39c12;
+    }
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.3rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 999;
+    }
+    #toast.show {
+      opacity: 1;
     }
   </style>
-  <!-- Yandex.Metrika counter -->
-  <script type="text/javascript" >
-     (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-     m[i].l=1*new Date();
-     for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-     k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
-     (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
-  
-     ym(103115228, "init", {
-          clickmap:true,
-          trackLinks:true,
-          accurateTrackBounce:true,
-          webvisor:true
-     });
-  </script>
-  <noscript><div><img src="https://mc.yandex.ru/watch/103115228" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
-  <!-- /Yandex.Metrika counter -->
 </head>
 <body>
   <h1>Каталог курсов</h1>
   <input type="text" id="search" placeholder="Поиск курса по слову и автору...">
   <p class="note">При нажатии на курс откроется пост в канале. Только для вступивших в приват</p>
+
+  <div id="watching-now" style="display:none">
+    <h2>Смотрю сейчас</h2>
+    <div id="watching-list"></div>
+  </div>
+
   <div id="catalog"></div>
 
+  <div id="toast">Добавлено в закладки</div>
+
   <script>
+    const STORAGE_KEY = 'bookmarkedCourses';
+
     async function loadItems() {
       const res = await fetch('items.txt?' + Date.now());
       const text = await res.text();
@@ -83,31 +122,110 @@
       return items;
     }
 
+    function getBookmarks() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveBookmarks(bookmarks) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks));
+    }
+
+    function isBookmarked(url) {
+      return getBookmarks().includes(url);
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1500);
+    }
+
+    function toggleBookmark(name, url) {
+      let bookmarks = getBookmarks();
+      const wasBookmarked = bookmarks.includes(url);
+      if (wasBookmarked) {
+        bookmarks = bookmarks.filter(u => u !== url);
+      } else {
+        bookmarks.push(url);
+        showToast('Добавлено в закладки');
+      }
+      saveBookmarks(bookmarks);
+      const query = document.getElementById('search').value.toLowerCase();
+      const filtered = window.allItems.filter(({ name }) => name.toLowerCase().includes(query));
+      renderItems(filtered);
+      renderWatchingNow(window.allItems);
+    }
+
     function renderItems(items) {
       const catalog = document.getElementById('catalog');
       catalog.innerHTML = '';
       items.forEach(({ name, url }) => {
         const div = document.createElement('div');
         div.className = 'item';
+
+        const bookmarkBtn = document.createElement('button');
+        bookmarkBtn.className = 'bookmark-btn';
+        bookmarkBtn.innerHTML = isBookmarked(url) ? '★' : '☆';
+        if (isBookmarked(url)) bookmarkBtn.classList.add('bookmarked');
+        bookmarkBtn.onclick = () => toggleBookmark(name, url);
+
         const a = document.createElement('a');
         a.href = url;
         a.target = '_blank';
         a.textContent = name;
+
+        div.appendChild(bookmarkBtn);
         div.appendChild(a);
         catalog.appendChild(div);
       });
     }
 
+    function renderWatchingNow(items) {
+      const container = document.getElementById('watching-now');
+      const list = document.getElementById('watching-list');
+      const bookmarks = getBookmarks();
+      list.innerHTML = '';
+      const bookmarkedItems = items.filter(item => bookmarks.includes(item.url));
+      if (bookmarkedItems.length === 0) {
+        container.style.display = 'none';
+        return;
+      }
+      container.style.display = 'block';
+      bookmarkedItems.forEach(({ name, url }) => {
+        const div = document.createElement('div');
+        div.className = 'item';
+
+        const bookmarkBtn = document.createElement('button');
+        bookmarkBtn.className = 'bookmark-btn bookmarked';
+        bookmarkBtn.innerHTML = '★';
+        bookmarkBtn.onclick = () => toggleBookmark(name, url);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.textContent = name;
+
+        div.appendChild(bookmarkBtn);
+        div.appendChild(a);
+        list.appendChild(div);
+      });
+    }
+
     document.getElementById('search').addEventListener('input', async (e) => {
       const query = e.target.value.toLowerCase();
-      const items = await loadItems();
-      const filtered = items.filter(({ name }) => name.toLowerCase().includes(query));
+      const filtered = window.allItems.filter(({ name }) => name.toLowerCase().includes(query));
       renderItems(filtered);
     });
 
     window.addEventListener('DOMContentLoaded', async () => {
-      const items = await loadItems();
-      renderItems(items);
+      window.allItems = await loadItems();
+      renderItems(window.allItems);
+      renderWatchingNow(window.allItems);
     });
   </script>
 </body>
