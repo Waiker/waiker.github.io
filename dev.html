@@ -1,232 +1,138 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Каталог курсов приватного канала</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #f4f4f4;
-      margin: 0;
-      padding: 1rem;
-    }
-    h1 {
-      text-align: center;
-    }
-    .note {
-      font-size: 0.8rem;
-      color: #666;
-      text-align: center;
-      margin: 0 0 0.8rem 0;
-      font-style: italic;
-    }
-    #search {
-      display: block;
-      margin: 0 auto 1rem;
-      padding: 0.5rem;
-      width: 80%;
-      font-size: 1rem;
-    }
-    #watching-now {
-      max-width: 600px;
-      margin: 1rem auto;
-      padding: 0.5rem;
-      background: #fff8cc;
-      border: 1px solid #e0c400;
-      border-radius: 0.5rem;
-    }
-    #watching-now h2 {
-      margin-top: 0;
-      font-size: 1.1rem;
-    }
-    #watching-list .item {
-      background: #fffbe8;
-      margin-bottom: 0.5rem;
-    }
-    #catalog {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 0.5rem;
-      max-width: 600px;
-      margin: 0 auto;
-    }
-    .item {
-      background: white;
-      padding: 1rem;
-      border-radius: 0.5rem;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .item a {
-      color: inherit;
-      text-decoration: none;
-      flex: 1;
-    }
-    .bookmark-btn {
-      background: none;
-      border: none;
-      font-size: 1.2rem;
-      cursor: pointer;
-      color: #888;
-    }
-    .bookmarked {
-      color: #f39c12;
-    }
-    #toast {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #333;
-      color: white;
-      padding: 0.5rem 1rem;
-      border-radius: 0.3rem;
-      opacity: 0;
-      transition: opacity 0.3s;
-      z-index: 999;
-    }
-    #toast.show {
-      opacity: 1;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Каталог курсов</title>
+<style>
+body { font-family:sans-serif; background:#f4f4f4; margin:0; padding:1rem; }
+h1 { text-align:center; }
+.note { font-size:0.8rem; color:#666; text-align:center; margin:0 0 0.8rem; font-style:italic; }
+#search, #catSearch { display:block; margin:0 auto 1rem; padding:0.5rem; width:80%; font-size:1rem; }
+#categories { display:flex; gap:0.3rem; overflow-x:auto; padding:0.5rem 0; scrollbar-width:thin; scrollbar-color:#ccc transparent; }
+#categories::-webkit-scrollbar { height:6px; }
+#categories::-webkit-scrollbar-thumb { background:#ccc; border-radius:3px; }
+.category-chip { flex:0 0 auto; padding:0.3rem 0.6rem; border-radius:0.3rem; background:#eee; cursor:pointer; user-select:none; transition:all 0.2s; }
+.category-chip.active { background:#1f6feb; color:white; font-weight:bold; transform:scale(1.05); }
+#watching-now { max-width:600px; margin:1rem auto; padding:0.5rem; background:#fff8cc; border:1px solid #e0c400; border-radius:0.5rem; display:none; }
+#watching-now h2 { margin-top:0; font-size:1.1rem; }
+#watching-list .item, #catalog .item { background:#fff; margin-bottom:0.5rem; padding:0.8rem; border-radius:0.5rem; display:flex; justify-content:space-between; align-items:center; gap:0.5rem; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+.item a { flex:1; text-decoration:none; color:inherit; }
+.bookmark-btn { background:none; border:none; font-size:1.2rem; cursor:pointer; color:#888; }
+.bookmarked { color:#f39c12; }
+#toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#333; color:white; padding:0.5rem 1rem; border-radius:0.3rem; opacity:0; transition:opacity 0.3s; z-index:999; }
+#toast.show { opacity:1; }
+</style>
 </head>
 <body>
-  <h1>Каталог курсов</h1>
-  <input type="text" id="search" placeholder="Поиск курса по слову и автору...">
-  <p class="note">При нажатии на курс откроется пост в канале. Только для вступивших в приват</p>
 
-  <div id="watching-now" style="display:none">
-    <h2>Смотрю сейчас</h2>
-    <div id="watching-list"></div>
-  </div>
+<h1>Каталог курсов</h1>
+<input type="text" id="search" placeholder="Поиск курса...">
+<input type="text" id="catSearch" placeholder="Поиск категории...">
+<div id="categories"></div>
+<p class="note">При нажатии на курс откроется пост в канале. Только для вступивших в приват.</p>
 
-  <div id="catalog"></div>
+<div id="watching-now">
+  <h2>Смотрю сейчас</h2>
+  <div id="watching-list"></div>
+</div>
 
-  <div id="toast">Добавлено в закладки</div>
+<div id="catalog"></div>
+<div id="toast">Добавлено в закладки</div>
 
-  <script>
-    const STORAGE_KEY = 'bookmarkedCourses';
+<script>
+const STORAGE_KEY = 'bookmarkedCourses';
+const API_URL = 'https://yourhost.com/api/public_get_courses.php?token=YOUR_SECRET_TOKEN';
 
-    async function loadItems() {
-      const res = await fetch('items.txt?' + Date.now());
-      const text = await res.text();
-      const lines = text.split('\n').map(line => line.trim()).filter(line => line);
-      const items = [];
-      for (let i = 0; i < lines.length - 1; i += 2) {
-        items.push({ name: lines[i], url: lines[i + 1] });
-      }
-      return items;
-    }
+let allCourses = [];
+let allCategories = [];
+let activeCategoryId = null;
 
-    function getBookmarks() {
-      try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-      } catch {
-        return [];
-      }
-    }
+async function loadData() {
+  const res = await fetch(API_URL + '&_=' + Date.now());
+  const data = await res.json();
+  allCourses = data.courses.map(c => ({ ...c }));
+  allCategories = data.categories;
+}
 
-    function saveBookmarks(bookmarks) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks));
-    }
+function getBookmarks() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
+}
+function saveBookmarks(bookmarks) { localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks)); }
+function isBookmarked(url) { return getBookmarks().includes(url); }
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1500); }
 
-    function isBookmarked(url) {
-      return getBookmarks().includes(url);
-    }
+function toggleBookmark(name,url){
+  let bookmarks = getBookmarks();
+  if(bookmarks.includes(url)){ bookmarks = bookmarks.filter(u=>u!==url); } 
+  else { bookmarks.push(url); showToast('Добавлено в закладки'); }
+  saveBookmarks(bookmarks);
+  renderCatalog();
+  renderWatchingNow();
+}
 
-    function showToast(message) {
-      const toast = document.getElementById('toast');
-      toast.textContent = message;
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 1500);
-    }
+function renderCatalog(){
+  const catalog = document.getElementById('catalog');
+  const q = document.getElementById('search').value.toLowerCase();
+  catalog.innerHTML='';
+  let items = allCourses.filter(c=>c.name.toLowerCase().includes(q));
+  if(activeCategoryId) items = items.filter(c=>c.category_ids.includes(activeCategoryId));
+  if(!items.length){ catalog.innerHTML='<div class="muted">Курсы не найдены</div>'; return; }
+  items.forEach(c=>{
+    const div = document.createElement('div'); div.className='item';
+    const a = document.createElement('a'); a.href=c.url; a.target='_blank'; a.textContent=c.name;
+    const btn = document.createElement('button'); btn.className='bookmark-btn'; btn.innerHTML=isBookmarked(c.url)?'★':'☆';
+    if(isBookmarked(c.url)) btn.classList.add('bookmarked');
+    btn.onclick = ()=>toggleBookmark(c.name,c.url);
+    div.appendChild(btn); div.appendChild(a); catalog.appendChild(div);
+  });
+}
 
-    function toggleBookmark(name, url) {
-      let bookmarks = getBookmarks();
-      const wasBookmarked = bookmarks.includes(url);
-      if (wasBookmarked) {
-        bookmarks = bookmarks.filter(u => u !== url);
-      } else {
-        bookmarks.push(url);
-        showToast('Добавлено в закладки');
-      }
-      saveBookmarks(bookmarks);
-      const query = document.getElementById('search').value.toLowerCase();
-      const filtered = window.allItems.filter(({ name }) => name.toLowerCase().includes(query));
-      renderItems(filtered);
-      renderWatchingNow(window.allItems);
-    }
+function renderWatchingNow(){
+  const container = document.getElementById('watching-now');
+  const list = document.getElementById('watching-list');
+  const bookmarks = getBookmarks();
+  const bookmarkedItems = allCourses.filter(c=>bookmarks.includes(c.url));
+  list.innerHTML='';
+  if(!bookmarkedItems.length){ container.style.display='none'; return; }
+  container.style.display='block';
+  bookmarkedItems.forEach(c=>{
+    const div = document.createElement('div'); div.className='item';
+    const a = document.createElement('a'); a.href=c.url; a.target='_blank'; a.textContent=c.name;
+    const btn = document.createElement('button'); btn.className='bookmark-btn bookmarked'; btn.innerHTML='★';
+    btn.onclick=()=>toggleBookmark(c.name,c.url);
+    div.appendChild(btn); div.appendChild(a); list.appendChild(div);
+  });
+}
 
-    function renderItems(items) {
-      const catalog = document.getElementById('catalog');
-      catalog.innerHTML = '';
-      items.forEach(({ name, url }) => {
-        const div = document.createElement('div');
-        div.className = 'item';
+function renderCategories(){
+  const mount = document.getElementById('categories');
+  const q = document.getElementById('catSearch').value.toLowerCase();
+  mount.innerHTML='';
+  const cats = allCategories.filter(c=>c.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+  cats.forEach(c=>{
+    const chip = document.createElement('div');
+    chip.className='category-chip'+(activeCategoryId==c.id?' active':'');
+    chip.textContent='#'+c.name;
+    chip.onclick=()=>{
+      if(activeCategoryId==c.id) activeCategoryId=null; else activeCategoryId=c.id;
+      renderCategories();
+      renderCatalog();
+    };
+    mount.appendChild(chip);
+  });
+}
 
-        const bookmarkBtn = document.createElement('button');
-        bookmarkBtn.className = 'bookmark-btn';
-        bookmarkBtn.innerHTML = isBookmarked(url) ? '★' : '☆';
-        if (isBookmarked(url)) bookmarkBtn.classList.add('bookmarked');
-        bookmarkBtn.onclick = () => toggleBookmark(name, url);
+document.getElementById('search').addEventListener('input',renderCatalog);
+document.getElementById('catSearch').addEventListener('input',renderCategories);
 
-        const a = document.createElement('a');
-        a.href = url;
-        a.target = '_blank';
-        a.textContent = name;
+window.addEventListener('DOMContentLoaded', async ()=>{
+  await loadData();
+  renderCategories();
+  renderCatalog();
+  renderWatchingNow();
+});
+</script>
 
-        div.appendChild(bookmarkBtn);
-        div.appendChild(a);
-        catalog.appendChild(div);
-      });
-    }
-
-    function renderWatchingNow(items) {
-      const container = document.getElementById('watching-now');
-      const list = document.getElementById('watching-list');
-      const bookmarks = getBookmarks();
-      list.innerHTML = '';
-      const bookmarkedItems = items.filter(item => bookmarks.includes(item.url));
-      if (bookmarkedItems.length === 0) {
-        container.style.display = 'none';
-        return;
-      }
-      container.style.display = 'block';
-      bookmarkedItems.forEach(({ name, url }) => {
-        const div = document.createElement('div');
-        div.className = 'item';
-
-        const bookmarkBtn = document.createElement('button');
-        bookmarkBtn.className = 'bookmark-btn bookmarked';
-        bookmarkBtn.innerHTML = '★';
-        bookmarkBtn.onclick = () => toggleBookmark(name, url);
-
-        const a = document.createElement('a');
-        a.href = url;
-        a.target = '_blank';
-        a.textContent = name;
-
-        div.appendChild(bookmarkBtn);
-        div.appendChild(a);
-        list.appendChild(div);
-      });
-    }
-
-    document.getElementById('search').addEventListener('input', async (e) => {
-      const query = e.target.value.toLowerCase();
-      const filtered = window.allItems.filter(({ name }) => name.toLowerCase().includes(query));
-      renderItems(filtered);
-    });
-
-    window.addEventListener('DOMContentLoaded', async () => {
-      window.allItems = await loadItems();
-      renderItems(window.allItems);
-      renderWatchingNow(window.allItems);
-    });
-  </script>
 </body>
 </html>
