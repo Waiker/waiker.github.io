@@ -9,11 +9,31 @@ body { font-family:sans-serif; background:#f4f4f4; margin:0; padding:1rem; }
 h1 { text-align:center; }
 .note { font-size:0.8rem; color:#666; text-align:center; margin:0 0 0.8rem; font-style:italic; }
 #search, #catSearch { display:block; margin:0 auto 1rem; padding:0.5rem; width:80%; font-size:1rem; }
-#categories { display:fles; gap:0.3rem; overflow-x:auto; padding:0.5rem 0; scrollbar-width:thin; scrollbar-color:#ccc transparent; }
-#categories::-webkit-scrollbar { height:6px; }
-#categories::-webkit-scrollbar-thumb { background:#ccc; border-radius:3px; }
-.category-chip { flex:0 0 auto; padding:0.3rem 0.6rem; border-radius:0.3rem; background:#eee; cursor:pointer; user-select:none; transition:all 0.2s; }
-.category-chip.active { background:#1f6feb; color:white; font-weight:bold; transform:scale(1.05); }
+#categories {
+  display: flex;
+  flex-wrap: wrap;       /* <-- перенос на новые строки */
+  gap: 0.4rem;           /* чуть больше отступ */
+  padding: 0.5rem 0;
+}
+
+.category-chip {
+  flex: 0 0 auto;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.5rem;
+  background: #eee;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
+  font-size: 0.9rem;      /* компактнее на мобильных */
+}
+
+.category-chip.active {
+  background: #1f6feb;
+  color: white;
+  font-weight: bold;
+  transform: scale(1.05);
+}
+
 #watching-now { max-width:600px; margin:1rem auto; padding:0.5rem; background:#fff8cc; border:1px solid #e0c400; border-radius:0.5rem; display:none; }
 #watching-now h2 { margin-top:0; font-size:1.1rem; }
 #watching-list .item, #catalog .item { background:#fff; margin-bottom:0.5rem; padding:0.8rem; border-radius:0.5rem; display:flex; justify-content:space-between; align-items:center; gap:0.5rem; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
