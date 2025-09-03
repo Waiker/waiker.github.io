@@ -56,6 +56,62 @@ h1 { text-align:center; }
 .bookmarked { color:#f39c12; }
 #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#333; color:white; padding:0.5rem 1rem; border-radius:0.3rem; opacity:0; transition:opacity 0.3s; z-index:999; }
 #toast.show { opacity:1; }
+
+#banner-carousel {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+#banner-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.banner {
+  flex: 0 0 85%;
+  min-height: 75px;
+  background: linear-gradient(135deg, #1a1f2c, #2b344a);
+  color: white;
+  border-radius: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 1rem;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition: transform 0.2s;
+}
+.banner:hover {
+  transform: scale(1.02);
+}
+
+.banner-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.banner-title {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+.banner-subtitle {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 0.25rem;
+}
+
+.banner-icon {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+}
 </style>
 </head>
 <body>
@@ -63,6 +119,27 @@ h1 { text-align:center; }
 <h1>Каталог курсов</h1>
 <input type="text" id="search" placeholder="Поиск курса...">
 <input type="text" id="catSearch" placeholder="Поиск категории...">
+
+<!-- Карусель баннеров -->
+<div id="banner-carousel">
+  <div class="banner" style="background: radial-gradient(87.56% 85.19% at 87.37% -15.14%, rgb(83, 255, 214) 0%, rgba(51, 169, 255, 0) 100%), radial-gradient(67.94% 70.77% at 0% 100%, rgb(113, 195, 255) 0%, rgb(93, 99, 255) 100%);" onclick="openBot('your_bot_name')">
+    <div class="banner-text">
+      <div class="banner-title">🔥 Сделки с XLM без комиссий
+только в Кошельке!</div>
+      <div class="banner-subtitle"><a href="banner1.html" class="class="banner-subtitle"">Подробнее</a></div>
+    </div>
+    <img class="banner-icon" src="3893143.png" alt="Иконка">
+  </div>
+
+  <div class="banner" onclick="window.location.href='banner1.html'">
+    <div class="banner-text">
+      <div class="banner-title">🎯 Эксклюзив</div>
+      <div class="banner-subtitle">Подробнее</div>
+    </div>
+    <img class="banner-icon" src="icon2.png" alt="Иконка">
+  </div>
+</div>
+
 <div id="categories"></div>
 <p class="note">При нажатии на курс откроется пост в канале. Только для вступивших в приват.</p>
 
@@ -166,6 +243,25 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   renderCatalog();
   renderWatchingNow();
 });
+
+function openBot(botUsername) {
+  window.location.href = `tg://resolve?domain=${botUsername}`;
+}
+
+// Автопрокрутка
+let carousel = document.getElementById("banner-carousel");
+let banners = document.querySelectorAll("#banner-carousel .banner");
+let index = 0;
+
+function autoSlide() {
+  index = (index + 1) % banners.length;
+  carousel.scrollTo({
+    left: banners[index].offsetLeft,
+    behavior: "smooth"
+  });
+}
+
+setInterval(autoSlide, 5000); // каждые 5 секунд
 </script>
 
 </body>
