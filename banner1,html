@@ -1,0 +1,140 @@
+<!-- promo.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Промо</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #0b0f1a;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      background: #0b0f1a;
+    }
+
+    header button {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 1rem;
+    }
+
+    .hero .date {
+      background: #1e2230;
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 0.5rem;
+      font-size: 0.8rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .hero img {
+      max-width: 150px;
+      margin: 1rem auto;
+    }
+
+    .features {
+      background: white;
+      color: #333;
+      border-radius: 1rem;
+      padding: 1rem;
+      margin: 1rem;
+    }
+
+    .features div {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.8rem;
+    }
+
+    .features div:last-child {
+      margin-bottom: 0;
+    }
+
+    .features span {
+      margin-left: 0.5rem;
+    }
+
+    .steps {
+      margin: 1rem;
+    }
+
+    .steps h3 {
+      margin-bottom: 0.5rem;
+      color: white;
+    }
+
+    .step {
+      background: #f5f5f5;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      margin-bottom: 0.5rem;
+      color: #333;
+    }
+
+    .cta {
+      margin-top: auto;
+      background: #1f6feb;
+      color: white;
+      text-align: center;
+      padding: 1rem;
+      cursor: pointer;
+      font-weight: bold;
+      border-radius: 0.5rem;
+      margin: 1rem;
+    }
+
+    .cta:hover {
+      background: #1052b3;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <button onclick="window.history.back()">← Назад</button>
+  </header>
+
+  <div class="hero">
+    <div class="date">До 31 октября</div>
+    <h2>Храните XLM и получайте<br>до 25% годовых</h2>
+    <img src="logo.png" alt="XLM">
+  </div>
+
+  <div class="features">
+    <div>⭐ <span>25% годовых в XLM</span></div>
+    <div>📅 <span>Начисляется ежедневно</span></div>
+    <div>💰 <span>Без комиссии</span></div>
+    <div>🔑 <span>Без блокировки средств</span></div>
+  </div>
+
+  <div class="steps">
+    <h3>Как это работает</h3>
+    <div class="step">1. Внесите XLM (до 2500)</div>
+    <div class="step">2. Держите в акции — бонусы ежедневно</div>
+    <div class="step">3. Получите XLM с доходностью</div>
+  </div>
+
+  <div class="cta" onclick="alert('CTA действие')">
+    Участвовать
+  </div>
+
+</body>
+</html>
