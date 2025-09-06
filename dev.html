@@ -4,49 +4,27 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Каталог курсов</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-body { font-family:sans-serif; background:#f4f4f4; margin:0; padding:1rem; }
+body { font-family:sans-serif; background:#f4f4f4; margin:0; padding-bottom:80px; }
 h1 { text-align:center; }
 .note { font-size:0.8rem; color:#666; text-align:center; margin:0 0 0.8rem; font-style:italic; }
 #search, #catSearch { display:block; margin:0 auto 1rem; padding:0.5rem; width:80%; font-size:1rem; }
+
 #categories {
   display: grid;
-  grid-auto-flow: column;           /* колонки идут горизонтально */
-  grid-template-rows: repeat(3, auto); /* максимум 3 строки */
+  grid-auto-flow: column;
+  grid-template-rows: repeat(3, auto);
   gap: 0.4rem;
   overflow-x: auto;
   padding: 0.5rem 0;
   scrollbar-width: thin;
   scrollbar-color: #ccc transparent;
 }
-
-#categories::-webkit-scrollbar {
-  height: 6px;
-}
-
-#categories::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 3px;
-}
-
-.category-chip {
-  padding: 0.4rem 0.7rem;
-  border-radius: 0.5rem;
-  background: #eee;
-  cursor: pointer;
-  user-select: none;
-  transition: all 0.2s;
-  font-size: 0.9rem;
-  white-space: nowrap;   /* чтобы текст не ломался */
-}
-
-.category-chip.active {
-  background: #1f6feb;
-  color: white;
-  font-weight: bold;
-  transform: scale(1.05);
-}
-
+#categories::-webkit-scrollbar { height: 6px; }
+#categories::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+.category-chip { padding: 0.4rem 0.7rem; border-radius: 0.5rem; background: #eee; cursor: pointer; user-select: none; transition: all 0.2s; font-size: 0.9rem; white-space: nowrap; }
+.category-chip.active { background: #1f6feb; color: white; font-weight: bold; transform: scale(1.05); }
 
 #watching-now { max-width:600px; margin:1rem auto; padding:0.5rem; background:#fff8cc; border:1px solid #e0c400; border-radius:0.5rem; display:none; }
 #watching-now h2 { margin-top:0; font-size:1.1rem; }
@@ -54,105 +32,83 @@ h1 { text-align:center; }
 .item a { flex:1; text-decoration:none; color:inherit; }
 .bookmark-btn { background:none; border:none; font-size:1.2rem; cursor:pointer; color:#888; }
 .bookmarked { color:#f39c12; }
-#toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#333; color:white; padding:0.5rem 1rem; border-radius:0.3rem; opacity:0; transition:opacity 0.3s; z-index:999; }
+#toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:#333; color:white; padding:0.5rem 1rem; border-radius:0.3rem; opacity:0; transition:opacity 0.3s; z-index:999; }
 #toast.show { opacity:1; }
 
-#banner-carousel {
-  display: flex;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-#banner-carousel::-webkit-scrollbar {
-  display: none;
-}
+#banner-carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 0.5rem; padding: 0.5rem; scrollbar-width: none; -ms-overflow-style: none; }
+#banner-carousel::-webkit-scrollbar { display: none; }
+.banner { flex: 0 0 85%; min-height: 75px; background: linear-gradient(135deg, #1a1f2c, #2b344a); color: white; border-radius: 0.8rem; display: flex; align-items: center; justify-content: space-between; padding: 0.8rem 1rem; box-shadow: 0 4px 8px rgba(0,0,0,0.15); cursor: pointer; scroll-snap-align: start; transition: transform 0.2s; }
+.banner:hover { transform: scale(1.02); }
+.banner-text { display: flex; flex-direction: column; justify-content: center; }
+.banner-title { font-size: 1rem; font-weight: bold; color: #fff; }
+.banner-subtitle { font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); margin-top: 0.25rem; }
+.banner-icon { width: 50px; height: 50px; object-fit: contain; }
 
-.banner {
-  flex: 0 0 85%;
-  min-height: 75px;
-  background: linear-gradient(135deg, #1a1f2c, #2b344a);
-  color: white;
-  border-radius: 0.8rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.8rem 1rem;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-  cursor: pointer;
-  scroll-snap-align: start;
-  transition: transform 0.2s;
-}
-.banner:hover {
-  transform: scale(1.02);
-}
-
-.banner-text {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.banner-title {
-  font-size: 1rem;
-  font-weight: bold;
-  color: #fff;
-}
-
-.banner-subtitle {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.8);
-  margin-top: 0.25rem;
-}
-
-.banner-icon {
-  width: 50px;
-  height: 50px;
-  object-fit: contain;
-}
+/* Нижнее меню */
+.navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; border-top: 1px solid #ccc; display: flex; justify-content: space-around; align-items: center; height: 70px; z-index: 1000; }
+.nav-item { text-align: center; flex: 1; font-size: 0.85rem; color:#444; cursor:pointer; }
+.nav-item i { font-size: 1.6rem; display:block; margin-bottom: 4px; }
+.nav-item.active { color: #1f6feb; font-weight: bold; }
 </style>
 </head>
 <body>
 
-<h1>Каталог курсов</h1>
-<input type="text" id="search" placeholder="Поиск курса...">
-<input type="text" id="catSearch" placeholder="Поиск категории...">
+<div id="page-catalog" class="page">
+  <h1>Каталог курсов</h1>
+  <input type="text" id="search" placeholder="Поиск курса...">
+  <input type="text" id="catSearch" placeholder="Поиск категории...">
 
-<!-- Карусель баннеров -->
-<div id="banner-carousel">
-  <div class="banner" style="background: radial-gradient(87.56% 85.19% at 87.37% -15.14%, rgb(83, 255, 214) 0%, rgba(51, 169, 255, 0) 100%), radial-gradient(67.94% 70.77% at 0% 100%, rgb(113, 195, 255) 0%, rgb(93, 99, 255) 100%);" onclick="openBot('your_bot_name')">
-    <div class="banner-text">
-      <div class="banner-title">🔥 Сделки с XLM без комиссий
-только в Кошельке!</div>
-      <div class="banner-subtitle"><a href="banner1.html" class="class="banner-subtitle"">Подробнее</a></div>
+  <div id="banner-carousel">
+    <div class="banner" style="background: radial-gradient(87.56% 85.19% at 87.37% -15.14%, rgb(83, 255, 214) 0%, rgba(51, 169, 255, 0) 100%), radial-gradient(67.94% 70.77% at 0% 100%, rgb(113, 195, 255) 0%, rgb(93, 99, 255) 100%);" onclick="window.location.href='banner1.html'">
+      <div class="banner-text">
+        <div class="banner-title">🔥 Неделя тренировок для новых пользователей</div>
+        <div class="banner-subtitle">Подробнее ></div>
+      </div>
+      <img class="banner-icon" src="banner1.png" alt="Неделя тренировок">
     </div>
-    <img class="banner-icon" src="3893143.png" alt="Иконка">
+    <div class="banner" style="background: linear-gradient(to right, #7B4FFF, #8E2DE2, #9C2ACE)" onclick="window.location.href='banner2.html'">
+      <div class="banner-text">
+        <div class="banner-title">🎯 Для тех, кто знает чего хочет</div>
+        <div class="banner-subtitle">Подробнее ></div>
+      </div>
+      <img class="banner-icon" src="banner2.png" alt="Месяц тренировок">
+    </div>
+    <div class="banner" style="background-image: linear-gradient(45deg, #FFD700, #CD853F)" onclick="window.location.href='banner3.html'">
+      <div class="banner-text">
+        <div class="banner-title">💡 Возможность заработка для владельцев каналов</div>
+        <div class="banner-subtitle">Подробнее ></div>
+      </div>
+      <img class="banner-icon" src="banner3.png" alt="Иконка">
+    </div>
   </div>
 
-  <div class="banner" onclick="window.location.href='banner1.html'">
-    <div class="banner-text">
-      <div class="banner-title">🎯 Эксклюзив</div>
-      <div class="banner-subtitle">Подробнее</div>
-    </div>
-    <img class="banner-icon" src="icon2.png" alt="Иконка">
-  </div>
+  <div id="categories"></div>
+  <p class="note">При нажатии на курс откроется пост в канале. Только для вступивших в приват.</p>
+  <div id="catalog"></div>
 </div>
 
-<div id="categories"></div>
-<p class="note">При нажатии на курс откроется пост в канале. Только для вступивших в приват.</p>
-
-<div id="watching-now">
-  <h2>Смотрю сейчас</h2>
+<div id="page-bookmarks" class="page" style="display:none">
+  <h1>Закладки</h1>
   <div id="watching-list"></div>
 </div>
 
-<div id="catalog"></div>
+<div id="page-viewed" class="page" style="display:none">
+  <h1>Просмотрено</h1>
+  <div id="viewed-list"></div>
+</div>
+
 <div id="toast">Добавлено в закладки</div>
+
+<!-- Нижнее меню -->
+<div class="navbar">
+  <div class="nav-item active" onclick="switchPage('catalog', this)"><i class="fa-solid fa-folder"></i>Каталог</div>
+  <div class="nav-item" onclick="switchPage('bookmarks', this)"><i class="fa-solid fa-star"></i>Закладки</div>
+  <div class="nav-item" onclick="switchPage('viewed', this)"><i class="fa-solid fa-check"></i>Просмотрено</div>
+</div>
 
 <script>
 const STORAGE_KEY = 'bookmarkedCourses';
+const VIEWED_KEY = 'viewedCourses';
 const API_URL = 'https://cp.wtfbjj.ru/api/public.php?token=603B591160C537C6D962926C3A9AB2DF';
 
 let allCourses = [];
@@ -166,20 +122,30 @@ async function loadData() {
   allCategories = data.categories;
 }
 
-function getBookmarks() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
-}
-function saveBookmarks(bookmarks) { localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks)); }
+function getBookmarks() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; } }
+function saveBookmarks(b) { localStorage.setItem(STORAGE_KEY, JSON.stringify(b)); }
 function isBookmarked(url) { return getBookmarks().includes(url); }
+
+function getViewed() { try { return JSON.parse(localStorage.getItem(VIEWED_KEY)) || []; } catch { return []; } }
+function saveViewed(v) { localStorage.setItem(VIEWED_KEY, JSON.stringify(v)); }
+function isViewed(url) { return getViewed().includes(url); }
+
 function showToast(msg) { const t = document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1500); }
 
 function toggleBookmark(name,url){
-  let bookmarks = getBookmarks();
-  if(bookmarks.includes(url)){ bookmarks = bookmarks.filter(u=>u!==url); } 
-  else { bookmarks.push(url); showToast('Добавлено в закладки'); }
-  saveBookmarks(bookmarks);
+  let b = getBookmarks();
+  if(b.includes(url)){ b = b.filter(u=>u!==url); } else { b.push(url); showToast('Добавлено в закладки'); }
+  saveBookmarks(b);
   renderCatalog();
-  renderWatchingNow();
+  renderBookmarks();
+}
+
+function toggleViewed(name,url){
+  let v = getViewed();
+  if(v.includes(url)){ v = v.filter(u=>u!==url); } else { v.push(url); showToast('Отмечено как просмотрено'); }
+  saveViewed(v);
+  renderCatalog();
+  renderViewed();
 }
 
 function renderCatalog(){
@@ -192,26 +158,42 @@ function renderCatalog(){
   items.forEach(c=>{
     const div = document.createElement('div'); div.className='item';
     const a = document.createElement('a'); a.href=c.url; a.target='_blank'; a.textContent=c.name;
-    const btn = document.createElement('button'); btn.className='bookmark-btn'; btn.innerHTML=isBookmarked(c.url)?'★':'☆';
-    if(isBookmarked(c.url)) btn.classList.add('bookmarked');
-    btn.onclick = ()=>toggleBookmark(c.name,c.url);
-    div.appendChild(btn); div.appendChild(a); catalog.appendChild(div);
+    const bmBtn = document.createElement('button'); bmBtn.className='bookmark-btn'; bmBtn.innerHTML=isBookmarked(c.url)?'★':'☆';
+    if(isBookmarked(c.url)) bmBtn.classList.add('bookmarked');
+    bmBtn.onclick = ()=>toggleBookmark(c.name,c.url);
+    const vwBtn = document.createElement('button'); vwBtn.className='bookmark-btn'; vwBtn.innerHTML=isViewed(c.url)?'✔':'☐';
+    if(isViewed(c.url)) vwBtn.classList.add('bookmarked');
+    vwBtn.onclick = ()=>toggleViewed(c.name,c.url);
+    div.appendChild(bmBtn); div.appendChild(vwBtn); div.appendChild(a); catalog.appendChild(div);
   });
 }
 
-function renderWatchingNow(){
-  const container = document.getElementById('watching-now');
+function renderBookmarks(){
   const list = document.getElementById('watching-list');
   const bookmarks = getBookmarks();
-  const bookmarkedItems = allCourses.filter(c=>bookmarks.includes(c.url));
+  const items = allCourses.filter(c=>bookmarks.includes(c.url));
   list.innerHTML='';
-  if(!bookmarkedItems.length){ container.style.display='none'; return; }
-  container.style.display='block';
-  bookmarkedItems.forEach(c=>{
+  if(!items.length){ list.innerHTML='<div class="muted">Закладок нет</div>'; return; }
+  items.forEach(c=>{
     const div = document.createElement('div'); div.className='item';
     const a = document.createElement('a'); a.href=c.url; a.target='_blank'; a.textContent=c.name;
     const btn = document.createElement('button'); btn.className='bookmark-btn bookmarked'; btn.innerHTML='★';
     btn.onclick=()=>toggleBookmark(c.name,c.url);
+    div.appendChild(btn); div.appendChild(a); list.appendChild(div);
+  });
+}
+
+function renderViewed(){
+  const list = document.getElementById('viewed-list');
+  const viewed = getViewed();
+  const items = allCourses.filter(c=>viewed.includes(c.url));
+  list.innerHTML='';
+  if(!items.length){ list.innerHTML='<div class="muted">Просмотренных курсов нет</div>'; return; }
+  items.forEach(c=>{
+    const div = document.createElement('div'); div.className='item';
+    const a = document.createElement('a'); a.href=c.url; a.target='_blank'; a.textContent=c.name;
+    const btn = document.createElement('button'); btn.className='bookmark-btn bookmarked'; btn.innerHTML='✔';
+    btn.onclick=()=>toggleViewed(c.name,c.url);
     div.appendChild(btn); div.appendChild(a); list.appendChild(div);
   });
 }
@@ -225,11 +207,7 @@ function renderCategories(){
     const chip = document.createElement('div');
     chip.className='category-chip'+(activeCategoryId==c.id?' active':'');
     chip.textContent='#'+c.name;
-    chip.onclick=()=>{
-      if(activeCategoryId==c.id) activeCategoryId=null; else activeCategoryId=c.id;
-      renderCategories();
-      renderCatalog();
-    };
+    chip.onclick=()=>{ if(activeCategoryId==c.id) activeCategoryId=null; else activeCategoryId=c.id; renderCategories(); renderCatalog(); };
     mount.appendChild(chip);
   });
 }
@@ -241,28 +219,27 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   await loadData();
   renderCategories();
   renderCatalog();
-  renderWatchingNow();
+  renderBookmarks();
+  renderViewed();
 });
 
-function openBot(botUsername) {
-  window.location.href = `tg://resolve?domain=${botUsername}`;
+function switchPage(page, el){
+  document.querySelectorAll('.page').forEach(p=>p.style.display='none');
+  document.getElementById('page-'+page).style.display='block';
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
 }
 
 // Автопрокрутка
 let carousel = document.getElementById("banner-carousel");
 let banners = document.querySelectorAll("#banner-carousel .banner");
 let index = 0;
-
 function autoSlide() {
   index = (index + 1) % banners.length;
-  carousel.scrollTo({
-    left: banners[index].offsetLeft,
-    behavior: "smooth"
-  });
+  carousel.scrollTo({ left: banners[index].offsetLeft, behavior: "smooth" });
 }
-
-setInterval(autoSlide, 5000); // каждые 5 секунд
+setInterval(autoSlide, 5000);
 </script>
-
 </body>
 </html>
+
