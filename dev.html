@@ -480,6 +480,23 @@ window.addEventListener('DOMContentLoaded', ()=>{
   loadData();
 });
 
+searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().trim();
+
+    if (query === "") {
+        activeCategory = null; // сбрасываем категорию
+        renderCourses(coursesData); // показываем все курсы
+        return;
+    }
+
+    // остальной код фильтрации
+    const filtered = coursesData.filter(course =>
+        course.title.toLowerCase().includes(query) ||
+        (course.category && course.category.toLowerCase().includes(query))
+    );
+    renderCourses(filtered);
+});
+
 /* small utility: show errors to toast */
 function showError(msg){ console.error(msg); showToast(msg); }
 
