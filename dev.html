@@ -320,7 +320,8 @@ function renderCatalog(){
       tags.appendChild(tEl);
     });
 
-    left.appendChild(title); left.appendChild(meta); left.appendChild(tags);
+    //left.appendChild(title); left.appendChild(meta); left.appendChild(tags);
+    left.appendChild(title); left.appendChild(tags);
 
     const actions = document.createElement('div'); actions.className='course-actions';
     const bk = document.createElement('button'); bk.className='btn-icon'; bk.innerHTML = STATE.bookmarks.includes(c.url) ? '<i class="fa-solid fa-star"></i>' : '<i class="fa-regular fa-star"></i>';
