@@ -1,233 +1,454 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TWA Курсы</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #fff;
-      color: #333;
-    }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TWA — Каталог курсов</title>
 
-    /* Страницы */
-    .page {
-      display: none;
-      padding-bottom: 60px; /* отступ под меню */
-    }
-    .page.active { display: block; }
+<!-- Font Awesome (иконки) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
 
-    /* Нижнее меню */
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 65px;
-      background: #fff;
-      border-top: 1px solid #ddd;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      z-index: 1000;
-    }
-    .bottom-nav button {
-      flex: 1;
-      background: none;
-      border: none;
-      font-size: 14px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: #555;
-    }
-    .bottom-nav button.active {
-      color: #007bff;
-    }
-    .bottom-nav i {
-      font-size: 20px;
-      margin-bottom: 4px;
-    }
+<style>
+  :root{
+    --accent:#1f6feb;
+    --bg:#f4f6fb;
+    --card:#fff;
+    --muted:#777;
+    --chip-bg:#eee;
+  }
+  html,body{height:100%;margin:0;font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+  body{display:flex;flex-direction:column;background:var(--bg);color:#111;min-height:100vh;padding-bottom:130px;} /* место под меню */
 
-    /* 🔍 Поиск */
-    .search-bar {
-      display: flex;
-      align-items: center;
-      position: relative;
-      padding: 8px;
-      background: #f0f0f0;
-      border-radius: 12px;
-      margin: 10px;
-    }
-    .search-bar input {
-      flex: 1;
-      border: none;
-      outline: none;
-      padding: 8px 8px 8px 32px;
-      font-size: 16px;
-      border-radius: 12px;
-      background: transparent;
-    }
-    .search-icon {
-      position: absolute;
-      left: 18px;
-      font-size: 16px;
-      color: #888;
-    }
-    .autocomplete-list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      position: absolute;
-      top: 42px;
-      left: 10px;
-      right: 10px;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      z-index: 100;
-    }
-    .autocomplete-list li {
-      padding: 8px;
-      cursor: pointer;
-    }
-    .autocomplete-list li:hover {
-      background: #f5f5f5;
-    }
+  /* header / search */
+  .topbar{position:sticky;top:0;background:#fff;padding:10px 12px;border-bottom:1px solid #e6e9f0;z-index:200}
+  .search-wrap{max-width:920px;margin:0 auto;display:flex;gap:8px;align-items:center;position:relative}
+  .search{flex:1;background:#f1f4f8;padding:8px;border-radius:999px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 6px rgba(0,0,0,0.04)}
+  .search input{border:0;outline:none;flex:1;font-size:16px;background:transparent;padding:6px}
+  .search .fa-magnifying-glass{color:var(--muted);font-size:18px}
+  /* suggestions */
+  #suggestBox{position:absolute;left:0;right:0;top:56px;max-height:320px;overflow:auto;background:#fff;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.12);display:none;z-index:220}
+  #suggestBox .item{padding:10px;border-bottom:1px solid #eee;cursor:pointer}
+  #suggestBox .item:last-child{border-bottom:none}
+  #suggestBox .type-cat{font-size:12px;color:#888;margin-left:6px}
 
-    /* Аккордеон */
-    .accordion {
-      margin: 10px;
-      border-radius: 8px;
-      background: #fafafa;
-      overflow: hidden;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-    }
-    .accordion-header {
-      padding: 12px;
-      display: flex;
-      justify-content: space-between;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .accordion-body {
-      display: none;
-      padding: 10px;
-    }
-    .accordion-body ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    .accordion-body li {
-      padding: 6px 0;
-      border-bottom: 1px solid #eee;
-    }
-  </style>
+  /* banner */
+  .banner-wrap{max-width:920px;margin:12px auto;padding:0 12px}
+  .banner{background:linear-gradient(135deg,#1f2a44,#252f48);color:#fff;padding:12px;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .banner .left{display:flex;flex-direction:column;gap:6px}
+  .banner .title{font-weight:700;font-size:15px}
+  .banner .sub{opacity:0.9}
+  .banner .icon{width:56px;height:56px;object-fit:contain;border-radius:8px}
+
+  /* categories chips (compact scroll grid 3 rows) */
+  #catWrap{max-width:920px;margin:8px auto;padding:0 12px;overflow:hidden}
+  #categories {display:grid;grid-auto-flow:column;grid-template-rows:repeat(3, auto);gap:0.45rem;overflow-x:auto;padding:8px 0;scrollbar-width: thin;scrollbar-color:#ccc transparent}
+  #categories::-webkit-scrollbar{height:6px}
+  #categories::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+  .category-chip{padding:6px 10px;border-radius:999px;background:var(--chip-bg);white-space:nowrap;cursor:pointer;font-size:13px}
+  .category-chip.active{background:var(--accent);color:#fff;box-shadow:0 8px 20px rgba(31,111,235,0.12);transform:translateY(-2px)}
+
+  /* content */
+  .container{max-width:920px;margin:0 auto;padding:0 12px}
+  .controls{display:flex;gap:8px;align-items:center;margin:10px 0}
+  .courses{display:grid;grid-template-columns:1fr;gap:10px}
+  @media(min-width:720px){.courses{grid-template-columns:repeat(2,1fr)}}
+  .course-card{background:var(--card);padding:12px;border-radius:12px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 6px rgba(0,0,0,0.06)}
+  .course-left{flex:1;display:flex;flex-direction:column;gap:6px}
+  .course-title{font-weight:600}
+  .course-meta{font-size:13px;color:var(--muted)}
+  .course-tags{display:flex;gap:6px;flex-wrap:wrap}
+  .tag{background:#f0f4ff;padding:4px 8px;border-radius:999px;font-size:12px;color:#184}
+  .course-actions{display:flex;flex-direction:column;gap:8px;align-items:center}
+  .btn-icon{background:transparent;border:0;font-size:20px;cursor:pointer;color:var(--muted)}
+  .btn-icon.bookmarked{color:#f6a21a}
+  .watch-checkbox{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)}
+
+  /* pages */
+  .page{display:none;padding-bottom:80px}
+  .page.active{display:block}
+
+  /* bottom nav */
+  .bottom-nav{position:fixed;left:0;right:0;bottom:0;height:110px;display:flex;align-items:center;justify-content:space-around;background:#fff;border-top:1px solid #e6e9f0;padding:10px 8px;z-index:1200}
+  .nav-item{flex:1;text-align:center;cursor:pointer;color:var(--muted);padding:8px 0;border-radius:12px}
+  .nav-item i{display:block;font-size:30px;margin-bottom:6px}
+  .nav-item.active{color:var(--accent);font-weight:700}
+  @media(max-width:640px){.bottom-nav{height:120px}.nav-item i{font-size:34px}}
+
+  /* toast */
+  #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:140px;background:#222;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transition:opacity .25s;z-index:2000}
+  #toast.show{opacity:1}
+</style>
 </head>
 <body>
 
-  <!-- Каталог -->
-  <div id="catalog" class="page active">
-    <div class="search-bar">
-      <i class="fas fa-search search-icon"></i>
-      <input type="text" id="searchInput" placeholder="Поиск курсов или категорий..." autocomplete="off">
-      <ul id="autocompleteList" class="autocomplete-list"></ul>
-    </div>
-
-    <div class="accordion">
-      <div class="accordion-header" onclick="toggleAccordion()">
-        <span>Все категории</span>
-        <i class="fas fa-chevron-down"></i>
+  <!-- header with new compact search -->
+  <div class="topbar">
+    <div class="search-wrap">
+      <div class="search" role="search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input id="searchInput" placeholder="Поиск курса или категории..." autocomplete="off" />
       </div>
-      <div class="accordion-body" id="categoriesList">
-        <ul>
-          <li>🥋 Джиу-джитсу</li>
-          <li>🤼 Борьба</li>
-          <li>🥊 ММА</li>
-          <li>💪 Физподготовка</li>
-        </ul>
+
+      <!-- suggestions dropdown -->
+      <div id="suggestBox" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <!-- banner carousel -->
+  <div class="banner-wrap">
+    <div id="banner" class="banner" onclick="openPromo()">
+      <div class="left">
+        <div style="font-size:12px;background:rgba(255,255,255,0.06);display:inline-block;padding:4px 8px;border-radius:999px">До 31 октября</div>
+        <div class="title">Храните XLM и получайте до 25% годовых</div>
+        <div class="sub">Нажмите и откроется промоспецпредложение</div>
       </div>
-    </div>
-
-    <div id="coursesList">
-      <!-- список курсов -->
+      <img class="icon" src="https://via.placeholder.com/56" alt="">
     </div>
   </div>
 
-  <!-- Закладки -->
-  <div id="bookmarks" class="page">
-    <h2>Закладки ⭐</h2>
-    <div id="bookmarksList"></div>
+  <!-- categories -->
+  <div id="catWrap">
+    <div id="categories" aria-label="Категории"></div>
   </div>
 
-  <!-- Просмотрено -->
-  <div id="watched" class="page">
-    <h2>Просмотрено ✅</h2>
-    <div id="watchedList"></div>
-  </div>
+  <!-- main content area -->
+  <main class="container">
 
-  <!-- Нижнее меню -->
-  <div class="bottom-nav">
-    <button onclick="openPage('catalog', this)" class="active">
-      <i class="fas fa-folder"></i>
-      Каталог
-    </button>
-    <button onclick="openPage('bookmarks', this)">
-      <i class="fas fa-star"></i>
-      Закладки
-    </button>
-    <button onclick="openPage('watched', this)">
-      <i class="fas fa-check"></i>
-      Просмотрено
-    </button>
-  </div>
+    <!-- CATALOG PAGE -->
+    <section id="page-catalog" class="page active">
+      <div class="controls">
+        <div class="small-muted" id="countInfo">Загрузка...</div>
+        <div style="margin-left:auto">
+          <select id="sortSelect" style="padding:6px;border-radius:8px;border:1px solid #e6e9f0;background:#fff">
+            <option value="name_asc">По имени (А→Я)</option>
+            <option value="name_desc">По имени (Я→А)</option>
+            <option value="added_desc">По дате добавления</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="courses" class="courses"></div>
+    </section>
+
+    <!-- BOOKMARKS PAGE -->
+    <section id="page-bookmarks" class="page">
+      <div style="display:flex;gap:8px;align-items:center">
+        <h2 style="margin:0">Закладки</h2>
+        <select id="bmSort" style="margin-left:auto;padding:6px;border-radius:8px;border:1px solid #e6e9f0;background:#fff">
+          <option value="added_desc">По дате (новые)</option>
+          <option value="added_asc">По дате (старые)</option>
+          <option value="name_asc">По имени</option>
+        </select>
+      </div>
+      <div id="bookmarksList" style="margin-top:12px"></div>
+    </section>
+
+    <!-- WATCHED PAGE -->
+    <section id="page-watched" class="page">
+      <h2 style="margin:0 0 8px 0">Просмотрено</h2>
+      <div id="watchedList"></div>
+    </section>
+
+  </main>
+
+  <div id="toast"></div>
+
+  <!-- bottom nav -->
+  <nav class="bottom-nav" role="navigation">
+    <div class="nav-item active" data-target="page-catalog"><i class="fa-solid fa-book"></i>Каталог</div>
+    <div class="nav-item" data-target="page-bookmarks"><i class="fa-solid fa-star"></i>Закладки</div>
+    <div class="nav-item" data-target="page-watched"><i class="fa-solid fa-check"></i>Просмотрено</div>
+  </nav>
 
 <script>
-function openPage(pageId, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(pageId).classList.add('active');
-  document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+/* CONFIG */
+const API_URL = 'https://yourhost.com/api/public_get_courses.php?token=YOUR_PUBLIC_TOKEN'; // <-- замените на ваш
+
+/* STATE + localStorage keys */
+const KEY_BOOKMARKS = 'twa_bookmarks_v1';
+const KEY_WATCHED = 'twa_watched_v1';
+const KEY_BM_META = 'twa_bookmarks_meta_v1';
+
+let STATE = {
+  courses: [],
+  categories: [],
+  activeCategory: null,
+  query: '',
+  bookmarks: loadJSON(KEY_BOOKMARKS, []),
+  watched: loadJSON(KEY_WATCHED, []),
+  bmMeta: loadJSON(KEY_BM_META, {}) // url -> {addedAt,name}
+};
+
+/* helpers */
+function $(sel){ return document.querySelector(sel) }
+function $all(sel){ return Array.from(document.querySelectorAll(sel)) }
+function loadJSON(k,d){ try{ const t=localStorage.getItem(k); return t?JSON.parse(t):d; }catch(e){ return d; } }
+function saveJSON(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+function showToast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); t.style.opacity=1; setTimeout(()=>{ t.style.opacity=0; },1500); }
+
+/* ---------- Data loading ---------- */
+async function loadData(){
+  try{
+    const res = await fetch(API_URL + '&_=' + Date.now());
+    if(!res.ok) throw new Error('API error '+res.status);
+    const data = await res.json();
+    // normalize
+    STATE.categories = (data.categories || []).map(c=>({ id:String(c.id), name:c.name }));
+    STATE.courses = (data.courses || []).map(c=>({
+      id:String(c.id),
+      name:c.name || '',
+      url:c.url || '',
+      description:c.description || '',
+      category_ids: (c.category_ids || []).map(String),
+      categories: (c.categories || []) // array of names
+    }));
+    renderAll();
+  }catch(e){
+    console.error('loadData err',e);
+    // fallback demo data
+    loadMockData();
+  }
 }
-
-function toggleAccordion() {
-  const body = document.getElementById("categoriesList");
-  body.style.display = body.style.display === "block" ? "none" : "block";
-}
-
-const courses = [
-  "Базовые приёмы борьбы",
-  "Джиу-джитсу для начинающих",
-  "Физическая подготовка борца",
-  "MMA тактика",
-  "Техника бросков"
-];
-
-const searchInput = document.getElementById("searchInput");
-const autocompleteList = document.getElementById("autocompleteList");
-
-searchInput.addEventListener("input", () => {
-  const query = searchInput.value.toLowerCase();
-  autocompleteList.innerHTML = "";
-  if (query.length > 0) {
-    const matches = courses.filter(c => c.toLowerCase().includes(query));
-    matches.forEach(match => {
-      const li = document.createElement("li");
-      li.textContent = match;
-      li.onclick = () => {
-        searchInput.value = match;
-        autocompleteList.innerHTML = "";
-      };
-      autocompleteList.appendChild(li);
+function loadMockData(){
+  STATE.categories = [{id:'1',name:'Леглоки'},{id:'2',name:'Пас гард'},{id:'3',name:'Баттерфляй'},{id:'4',name:'Армбар'}];
+  STATE.courses = [];
+  for(let i=1;i<=12;i++){
+    STATE.courses.push({
+      id:String(100+i),
+      name:`Курс ${i} — ${STATE.categories[(i-1)%STATE.categories.length].name}`,
+      url:`https://t.me/example/${100+i}`,
+      description:`Описание курса ${i}`,
+      category_ids:[String(((i-1)%STATE.categories.length)+1)],
+      categories:[STATE.categories[(i-1)%STATE.categories.length].name]
     });
   }
+  renderAll();
+}
+
+/* ---------- Autocomplete index & suggestions (search) ---------- */
+let autocompleteIndex = []; // {type:'course'|'category', value, ref}
+function buildAutocompleteIndex(){
+  autocompleteIndex = [];
+  STATE.courses.forEach(c=> autocompleteIndex.push({ type:'course', value:c.name.toLowerCase(), ref:c }));
+  STATE.categories.forEach(cat=> autocompleteIndex.push({ type:'category', value:cat.name.toLowerCase(), ref:cat }));
+}
+
+/* suggestions UI */
+function renderSuggestions(q){
+  const box = $('#suggestBox');
+  box.innerHTML = '';
+  if(!q || q.trim().length<1){ box.style.display='none'; return; }
+  const s = q.trim().toLowerCase();
+  const results = autocompleteIndex.filter(i => i.value.includes(s)).slice(0,12);
+  if(results.length===0){ box.style.display='none'; return; }
+  results.forEach(r=>{
+    const el = document.createElement('div');
+    el.className = 'item';
+    if(r.type==='course'){
+      el.innerHTML = `<strong>${escapeHtml(r.ref.name)}</strong> <span style="color:#888;display:block;font-size:13px">${escapeHtml(r.ref.description || r.ref.url)}</span>`;
+      el.onclick = ()=>{ window.open(r.ref.url,'_blank'); box.style.display='none'; $('#searchInput').value=''; STATE.query=''; renderCatalog(); };
+    } else {
+      el.innerHTML = `<span>#${escapeHtml(r.ref.name)}</span><span class="type-cat">категория</span>`;
+      el.onclick = ()=>{ STATE.activeCategory = String(r.ref.id); $('#searchInput').value = ''; box.style.display='none'; renderCategories(); renderCatalog(); };
+    }
+    box.appendChild(el);
+  });
+  box.style.display='block';
+}
+function escapeHtml(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+/* ---------- Rendering ---------- */
+function renderAll(){
+  buildAutocompleteIndex();
+  renderCategoryChips();
+  renderCatalog();
+  renderBookmarks();
+  renderWatched();
+}
+
+function renderCategoryChips(){
+  const mount = $('#categories');
+  mount.innerHTML = '';
+  const visibleCats = STATE.categories;
+  visibleCats.forEach(cat=>{
+    const el = document.createElement('button');
+    el.className = 'category-chip' + (STATE.activeCategory===cat.id ? ' active' : '');
+    el.textContent = '#'+cat.name;
+    el.onclick = ()=>{ STATE.activeCategory = STATE.activeCategory===cat.id? null: cat.id; renderCategoryChips(); renderCatalog(); };
+    mount.appendChild(el);
+  });
+}
+
+/* filtering logic (search + category + watched filter if needed) */
+function filterCourses(){
+  const q = (STATE.query || '').trim().toLowerCase();
+  return STATE.courses.filter(c=>{
+    // name or category names match
+    const nameOk = (c.name||'').toLowerCase().includes(q);
+    const catText = (c.categories||[]).join(' ').toLowerCase();
+    const catOk = catText.includes(q);
+    if(q && !(nameOk || catOk)) return false;
+    if(STATE.activeCategory && !(c.category_ids||[]).includes(STATE.activeCategory)) return false;
+    return true;
+  });
+}
+
+function renderCatalog(){
+  const list = filterCourses();
+  const coursesWrap = $('#courses');
+  coursesWrap.innerHTML = '';
+  $('#countInfo').textContent = `${list.length} курса(ов)`;
+  // sorting
+  const sort = $('#sortSelect').value || 'name_asc';
+  list.sort((a,b)=>{
+    if(sort==='name_asc') return a.name.localeCompare(b.name,'ru');
+    if(sort==='name_desc') return b.name.localeCompare(a.name,'ru');
+    if(sort==='added_desc') return b.id - a.id;
+    return 0;
+  });
+
+  list.forEach(c=>{
+    const card = document.createElement('div'); card.className='course-card';
+    const left = document.createElement('div'); left.className='course-left';
+    const title = document.createElement('div'); title.className='course-title'; title.textContent=c.name;
+    const meta = document.createElement('div'); meta.className='course-meta'; meta.textContent=c.description || c.url;
+    const tags = document.createElement('div'); tags.className='course-tags';
+    (c.categories||[]).forEach(t => {
+      const tEl = document.createElement('div'); tEl.className='tag'; tEl.textContent = t;
+      tEl.onclick = (ev)=>{ ev.stopPropagation(); const cat = STATE.categories.find(x=>x.name===t); if(cat){ STATE.activeCategory = cat.id; renderCategoryChips(); renderCatalog(); } };
+      tags.appendChild(tEl);
+    });
+
+    left.appendChild(title); left.appendChild(meta); left.appendChild(tags);
+
+    const actions = document.createElement('div'); actions.className='course-actions';
+    const bk = document.createElement('button'); bk.className='btn-icon'; bk.innerHTML = STATE.bookmarks.includes(c.url) ? '<i class="fa-solid fa-star"></i>' : '<i class="fa-regular fa-star"></i>';
+    if(STATE.bookmarks.includes(c.url)) bk.classList.add('bookmarked');
+    bk.onclick = (ev)=>{ ev.stopPropagation(); toggleBookmark(c); };
+    const chkWrap = document.createElement('label'); chkWrap.className='watch-checkbox';
+    const cb = document.createElement('input'); cb.type='checkbox'; cb.checked = STATE.watched.includes(c.url);
+    cb.onchange = (ev)=>{ ev.stopPropagation(); toggleWatched(c); };
+    const cbLabel = document.createElement('span'); cbLabel.textContent='Просмотрено';
+    chkWrap.appendChild(cb); chkWrap.appendChild(cbLabel);
+
+    card.onclick = ()=>{ window.open(c.url,'_blank') };
+
+    actions.appendChild(bk); actions.appendChild(chkWrap);
+    card.appendChild(left); card.appendChild(actions);
+    coursesWrap.appendChild(card);
+  });
+}
+
+/* bookmarks */
+function toggleBookmark(course){
+  const i = STATE.bookmarks.indexOf(course.url);
+  if(i>=0){ STATE.bookmarks.splice(i,1); delete STATE.bmMeta[course.url]; saveJSON(KEY_BOOKMARKS, STATE.bookmarks); saveJSON(KEY_BM_META, STATE.bmMeta); showToast('Удалено из закладок'); }
+  else { STATE.bookmarks.push(course.url); STATE.bmMeta[course.url] = { addedAt: Date.now(), name: course.name }; saveJSON(KEY_BOOKMARKS, STATE.bookmarks); saveJSON(KEY_BM_META, STATE.bmMeta); showToast('Добавлено в закладки'); }
+  renderCatalog(); renderBookmarks();
+}
+function renderBookmarks(){
+  const mount = $('#bookmarksList'); mount.innerHTML='';
+  const items = STATE.bookmarks.map(url => STATE.courses.find(c=>c.url===url)).filter(Boolean);
+  const sortv = $('#bmSort')?$('#bmSort').value:'added_desc';
+  items.sort((a,b)=>{
+    if(sortv==='added_desc') return (STATE.bmMeta[b.url]?.addedAt||0) - (STATE.bmMeta[a.url]?.addedAt||0);
+    if(sortv==='added_asc') return (STATE.bmMeta[a.url]?.addedAt||0) - (STATE.bmMeta[b.url]?.addedAt||0);
+    if(sortv==='name_asc') return a.name.localeCompare(b.name,'ru');
+    return 0;
+  });
+  if(items.length===0){ mount.innerHTML = '<div style="color:#888">Закладок нет</div>'; return; }
+  items.forEach(c=>{
+    const card = document.createElement('div'); card.className='course-card';
+    const left = document.createElement('div'); left.className='course-left';
+    left.innerHTML = `<div class="course-title">${escapeHtml(c.name)}</div><div class="course-meta">${escapeHtml(c.description||c.url)}</div>`;
+    const actions = document.createElement('div'); actions.className='course-actions';
+    const openBtn = document.createElement('button'); openBtn.className='btn-icon'; openBtn.innerHTML='<i class="fa-solid fa-arrow-up-right-from-square"></i>'; openBtn.onclick=()=>window.open(c.url,'_blank');
+    const rm = document.createElement('button'); rm.className='btn-icon'; rm.innerHTML='<i class="fa-solid fa-trash"></i>'; rm.onclick=()=>{ toggleBookmark(c) };
+    actions.appendChild(openBtn); actions.appendChild(rm);
+    card.appendChild(left); card.appendChild(actions);
+    mount.appendChild(card);
+  });
+}
+
+/* watched */
+function toggleWatched(course){
+  const i = STATE.watched.indexOf(course.url);
+  if(i>=0){ STATE.watched.splice(i,1); saveJSON(KEY_WATCHED, STATE.watched); showToast('Отмечено как непросмотренное'); }
+  else { STATE.watched.push(course.url); saveJSON(KEY_WATCHED, STATE.watched); showToast('Отмечено как просмотрено'); }
+  renderCatalog(); renderWatched();
+}
+function renderWatched(){
+  const mount = $('#watchedList'); mount.innerHTML='';
+  const items = STATE.watched.map(url => STATE.courses.find(c=>c.url===url)).filter(Boolean);
+  if(items.length===0){ mount.innerHTML = '<div style="color:#888">Нет просмотренных курсов</div>'; return; }
+  items.forEach(c=>{
+    const card = document.createElement('div'); card.className='course-card';
+    const left = document.createElement('div'); left.className='course-left';
+    left.innerHTML = `<div class="course-title">${escapeHtml(c.name)}</div><div class="course-meta">${escapeHtml(c.description||c.url)}</div>`;
+    const actions = document.createElement('div'); actions.className='course-actions';
+    const openBtn = document.createElement('button'); openBtn.className='btn-icon'; openBtn.innerHTML='<i class="fa-solid fa-arrow-up-right-from-square"></i>'; openBtn.onclick=()=>window.open(c.url,'_blank');
+    const rm = document.createElement('button'); rm.className='btn-icon'; rm.innerHTML='<i class="fa-solid fa-trash"></i>'; rm.onclick=()=>{ toggleWatched(c) };
+    actions.appendChild(openBtn); actions.appendChild(rm);
+    card.appendChild(left); card.appendChild(actions);
+    mount.appendChild(card);
+  });
+}
+
+/* categories render (search field for categories is now part of main search) */
+function renderCategories(){
+  const mount = $('#categories');
+  mount.innerHTML = '';
+  const q = ''; // category search handled by main search input
+  const cats = STATE.categories.slice().sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+  cats.forEach(c=>{
+    const el = document.createElement('button'); el.className='category-chip' + (STATE.activeCategory===c.id ? ' active' : '');
+    el.textContent = '#'+c.name;
+    el.onclick = ()=>{ STATE.activeCategory = STATE.activeCategory===c.id? null : c.id; renderCategories(); renderCatalog(); };
+    mount.appendChild(el);
+  });
+}
+
+/* search input behavior */
+$('#searchInput').addEventListener('input', (e)=>{
+  STATE.query = e.target.value;
+  renderSuggestions(STATE.query);
+  renderCatalog();
 });
+$('#searchInput').addEventListener('keydown', (e)=>{
+  if(e.key==='Escape') { $('#searchInput').value=''; STATE.query=''; $('#suggestBox').style.display='none'; renderCatalog(); }
+});
+
+/* suggestion click outside close */
+document.addEventListener('click', (e)=>{
+  if(!e.target.closest('#suggestBox') && !e.target.closest('#searchInput')) $('#suggestBox').style.display='none';
+});
+
+/* navigation bottom */
+$all('.nav-item').forEach(n=>{
+  n.addEventListener('click', ()=>{
+    $all('.nav-item').forEach(x=>x.classList.remove('active'));
+    n.classList.add('active');
+    const target = n.dataset.target;
+    $all('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById(target).classList.add('active');
+    window.scrollTo(0,0);
+  });
+});
+
+/* promo open */
+function openPromo(){ window.location.href = 'promo.html'; }
+
+/* init */
+window.addEventListener('DOMContentLoaded', ()=>{
+  // init UI
+  $('#countInfo').textContent = 'Загрузка...';
+  loadData();
+});
+
+/* small utility: show errors to toast */
+function showError(msg){ console.error(msg); showToast(msg); }
+
+/* END */
 </script>
 </body>
 </html>
-
