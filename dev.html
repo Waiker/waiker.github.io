@@ -163,7 +163,7 @@
 
 <script>
 /* CONFIG */
-const API_URL = 'https://cp.wtfbjj.ru/api/public.php?token=603B591160C537C6D962926C3A9AB2DF'; // <-- замените на ваш
+const API_URL = 'https://cp.wtfbjj.ru/api/public.php?token=603B591160C537C6D962926C3A9AB2DF';
 
 /* STATE + localStorage keys */
 const KEY_BOOKMARKS = 'bookmarkedCourses';
@@ -312,7 +312,7 @@ function renderCatalog(){
     const card = document.createElement('div'); card.className='course-card';
     const left = document.createElement('div'); left.className='course-left';
     const title = document.createElement('div'); title.className='course-title'; title.textContent=c.name;
-    const meta = document.createElement('div'); meta.className='course-meta'; meta.textContent=c.description || c.url;
+    //const meta = document.createElement('div'); meta.className='course-meta'; meta.textContent=c.description || c.url;
     const tags = document.createElement('div'); tags.className='course-tags';
     (c.categories||[]).forEach(t => {
       const tEl = document.createElement('div'); tEl.className='tag'; tEl.textContent = t;
