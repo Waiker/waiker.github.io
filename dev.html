@@ -64,7 +64,7 @@
   .watch-checkbox{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)}
 
   /* pages */
-  .page{display:none;padding-bottom:80px}
+  .page{display:none;padding-bottom:140px}
   .page.active{display:block}
 
   /* bottom nav */
@@ -312,28 +312,46 @@ function renderCatalog(){
     const card = document.createElement('div'); card.className='course-card';
     const left = document.createElement('div'); left.className='course-left';
     const title = document.createElement('div'); title.className='course-title'; title.textContent=c.name;
-    //const meta = document.createElement('div'); meta.className='course-meta'; meta.textContent=c.description || c.url;
     const tags = document.createElement('div'); tags.className='course-tags';
+
     (c.categories||[]).forEach(t => {
       const tEl = document.createElement('div'); tEl.className='tag'; tEl.textContent = t;
-      tEl.onclick = (ev)=>{ ev.stopPropagation(); const cat = STATE.categories.find(x=>x.name===t); if(cat){ STATE.activeCategory = cat.id; renderCategoryChips(); renderCatalog(); } };
+      // click on tag: prevent card click, set search input to category name and apply filter
+      tEl.addEventListener('click', (ev)=>{
+        ev.stopPropagation();
+        const cat = STATE.categories.find(x=>x.name===t);
+        if(cat){
+          STATE.activeCategory = cat.id;
+          $('#searchInput').value = cat.name;
+          STATE.query = cat.name;
+          $('#suggestBox').style.display='none';
+          renderCategoryChips();
+          renderCatalog();
+          $('#searchInput').focus();
+        }
+      });
       tags.appendChild(tEl);
     });
 
-    //left.appendChild(title); left.appendChild(meta); left.appendChild(tags);
     left.appendChild(title); left.appendChild(tags);
 
     const actions = document.createElement('div'); actions.className='course-actions';
     const bk = document.createElement('button'); bk.className='btn-icon'; bk.innerHTML = STATE.bookmarks.includes(c.url) ? '<i class="fa-solid fa-star"></i>' : '<i class="fa-regular fa-star"></i>';
     if(STATE.bookmarks.includes(c.url)) bk.classList.add('bookmarked');
-    bk.onclick = (ev)=>{ ev.stopPropagation(); toggleBookmark(c); };
+    bk.addEventListener('click',(ev)=>{ ev.stopPropagation(); toggleBookmark(c); });
+
     const chkWrap = document.createElement('label'); chkWrap.className='watch-checkbox';
+    // prevent label click from propagating to card
+    chkWrap.addEventListener('click', ev=>{ ev.stopPropagation(); });
+
     const cb = document.createElement('input'); cb.type='checkbox'; cb.checked = STATE.watched.includes(c.url);
-    cb.onchange = (ev)=>{ ev.stopPropagation(); toggleWatched(c); };
+    // prevent click on checkbox from propagating and handle change
+    cb.addEventListener('click', ev=>{ ev.stopPropagation(); });
+    cb.addEventListener('change', (ev)=>{ ev.stopPropagation(); toggleWatched(c); });
     const cbLabel = document.createElement('span'); cbLabel.textContent='Просмотрено';
     chkWrap.appendChild(cb); chkWrap.appendChild(cbLabel);
 
-    card.onclick = ()=>{ window.open(c.url,'_blank') };
+    card.addEventListener('click', ()=>{ window.open(c.url,'_blank') });
 
     actions.appendChild(bk); actions.appendChild(chkWrap);
     card.appendChild(left); card.appendChild(actions);
@@ -400,12 +418,27 @@ function renderWatched(){
 function renderCategories(){
   const mount = $('#categories');
   mount.innerHTML = '';
-  const q = ''; // category search handled by main search input
   const cats = STATE.categories.slice().sort((a,b)=>a.name.localeCompare(b.name,'ru'));
   cats.forEach(c=>{
     const el = document.createElement('button'); el.className='category-chip' + (STATE.activeCategory===c.id ? ' active' : '');
     el.textContent = '#'+c.name;
-    el.onclick = ()=>{ STATE.activeCategory = STATE.activeCategory===c.id? null : c.id; renderCategories(); renderCatalog(); };
+    el.addEventListener('click', ()=>{
+      if(STATE.activeCategory === c.id){
+        // turning off filter
+        STATE.activeCategory = null;
+        $('#searchInput').value = '';
+        STATE.query = '';
+      } else {
+        STATE.activeCategory = c.id;
+        // put category name into search field so user sees active filter
+        $('#searchInput').value = c.name;
+        STATE.query = c.name;
+      }
+      $('#suggestBox').style.display='none';
+      renderCategories();
+      renderCatalog();
+      $('#searchInput').focus();
+    });
     mount.appendChild(el);
   });
 }
