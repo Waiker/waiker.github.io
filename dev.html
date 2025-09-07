@@ -40,7 +40,7 @@
   .banner .icon{width:56px;height:56px;object-fit:contain;border-radius:8px}
 
   /* categories chips (compact scroll grid 3 rows) */
-  #catWrap{max-width:920px;margin:8px auto;padding:0 12px;overflow:hidden}
+  #catWrap{max-width:920px;margin:8px auto;padding:0 12px;overflow:hidden;display:none}
   #categories {display:grid;grid-auto-flow:column;grid-template-rows:repeat(3, auto);gap:0.45rem;overflow-x:auto;padding:8px 0;scrollbar-width: thin;scrollbar-color:#ccc transparent}
   #categories::-webkit-scrollbar{height:6px}
   #categories::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
@@ -108,9 +108,9 @@
 
   
 <!--   categories -->
-<!--   <div id="catWrap">-->
+  <div id="catWrap">
     <div id="categories" aria-label="Категории"></div>
-  <!-- </div> -->
+  </div>
 
   <!-- main content area -->
   <main class="container">
@@ -250,7 +250,7 @@ function renderSuggestions(q){
       el.onclick = ()=>{ window.open(r.ref.url,'_blank'); box.style.display='none'; $('#searchInput').value=''; STATE.query=''; renderCatalog(); };
     } else {
       el.innerHTML = `<span>#${escapeHtml(r.ref.name)}</span><span class="type-cat">категория</span>`;
-      el.onclick = ()=>{ STATE.activeCategory = String(r.ref.id); $('#searchInput').value = ''; box.style.display='none'; renderCatalog(); };
+      el.onclick = ()=>{ STATE.activeCategory = String(r.ref.id); $('#searchInput').value = ''; box.style.display='none'; renderCategories(); renderCatalog(); };
     }
     box.appendChild(el);
   });
@@ -460,7 +460,7 @@ $('#searchInput').addEventListener('input', (e) => {
     // если поле пустое — сбрасываем категорию и подсказки, ререндерим
     STATE.activeCategory = null;
     $('#suggestBox').style.display = 'none';
-    // renderCategories(); // обновить визуально чипы категорий
+    renderCategories(); // обновить визуально чипы категорий
     renderCatalog();    // показать все курсы
     return;
   }
