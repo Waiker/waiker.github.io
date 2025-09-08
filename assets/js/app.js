@@ -353,6 +353,19 @@ window.addEventListener('DOMContentLoaded', ()=>{
 /* small utility: show errors to toast */
 function showError(msg){ console.error(msg); showToast(msg); }
 
+// Автопрокрутка
+let carousel = document.getElementById("banner-carousel");
+let banners = document.querySelectorAll("#banner-carousel .banner");
+let index = 0;
 
+function autoSlide() {
+  index = (index + 1) % banners.length;
+  carousel.scrollTo({
+    left: banners[index].offsetLeft,
+    behavior: "smooth"
+  });
+}
+
+setInterval(autoSlide, 5000); // каждые 5 секунд
 
 /* END */
