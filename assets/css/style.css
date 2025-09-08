@@ -1,0 +1,68 @@
+ :root{
+    --accent:#1f6feb;
+    --bg:#f4f6fb;
+    --card:#fff;
+    --muted:#777;
+    --chip-bg:#eee;
+  }
+  html,body{height:100%;margin:0;font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+  body{display:flex;flex-direction:column;background:var(--bg);color:#111;min-height:100vh;padding-bottom:130px;} /* место под меню */
+
+  /* header / search */
+  .topbar{position:sticky;top:0;background:#fff;padding:10px 12px;border-bottom:1px solid #e6e9f0;z-index:200}
+  .search-wrap{max-width:920px;margin:0 auto;display:flex;gap:8px;align-items:center;position:relative}
+  .search{flex:1;background:#f1f4f8;padding:8px;border-radius:999px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 6px rgba(0,0,0,0.04)}
+  .search input{border:0;outline:none;flex:1;font-size:16px;background:transparent;padding:6px}
+  .search .fa-magnifying-glass{color:var(--muted);font-size:18px}
+  /* suggestions */
+  #suggestBox{position:absolute;left:0;right:0;top:56px;max-height:320px;overflow:auto;background:#fff;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.12);display:none;z-index:220}
+  #suggestBox .item{padding:10px;border-bottom:1px solid #eee;cursor:pointer}
+  #suggestBox .item:last-child{border-bottom:none}
+  #suggestBox .type-cat{font-size:12px;color:#888;margin-left:6px}
+
+  /* banner */
+  .banner-wrap{max-width:920px;margin:12px auto;padding:0 12px}
+  .banner{background:linear-gradient(135deg,#1f2a44,#252f48);color:#fff;padding:12px;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .banner .left{display:flex;flex-direction:column;gap:6px}
+  .banner .title{font-weight:700;font-size:15px}
+  .banner .sub{opacity:0.9}
+  .banner .icon{width:56px;height:56px;object-fit:contain;border-radius:8px}
+
+  /* categories chips (compact scroll grid 3 rows) */
+  #catWrap{max-width:920px;margin:8px auto;padding:0 12px;overflow:hidden;display:none}
+  #categories {display:grid;grid-auto-flow:column;grid-template-rows:repeat(3, auto);gap:0.45rem;overflow-x:auto;padding:8px 0;scrollbar-width: thin;scrollbar-color:#ccc transparent}
+  #categories::-webkit-scrollbar{height:6px}
+  #categories::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+  .category-chip{padding:6px 10px;border-radius:999px;background:var(--chip-bg);white-space:nowrap;cursor:pointer;font-size:13px}
+  .category-chip.active{background:var(--accent);color:#fff;box-shadow:0 8px 20px rgba(31,111,235,0.12);transform:translateY(-2px)}
+
+  /* content */
+  .container{max-width:920px;padding:0 12px}
+  .controls{display:flex;gap:8px;align-items:center;margin:10px 0}
+  .courses{display:grid;grid-template-columns:1fr;gap:10px}
+  @media(min-width:720px){.courses{grid-template-columns:repeat(2,1fr)}}
+  .course-card{background:var(--card);padding:12px;border-radius:12px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 6px rgba(0,0,0,0.06)}
+  .course-left{flex:1;display:flex;flex-direction:column;gap:6px}
+  .course-title{font-weight:600}
+  .course-meta{font-size:13px;color:var(--muted)}
+  .course-tags{display:flex;gap:6px;flex-wrap:wrap}
+  .tag{background:#f0f4ff;padding:4px 8px;border-radius:999px;font-size:12px;color:#184}
+  .course-actions{display:flex;flex-direction:column;gap:8px;align-items:center}
+  .btn-icon{background:transparent;border:0;font-size:20px;cursor:pointer;color:var(--muted)}
+  .btn-icon.bookmarked{color:#f6a21a}
+  .watch-checkbox{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)}
+
+  /* pages */
+  .page{display:none;padding-bottom:140px}
+  .page.active{display:block}
+  
+  /* bottom nav */
+  .bottom-nav{position:fixed;left:0;right:0;bottom:0;height:110px;display:flex;align-items:center;justify-content:space-around;background:#fff;border-top:1px solid #e6e9f0;padding:10px 8px;z-index:1200}
+  .nav-item{flex:1;text-align:center;cursor:pointer;color:var(--muted);padding:8px 0;border-radius:12px}
+  .nav-item i{display:block;font-size:30px;margin-bottom:6px}
+  .nav-item.active{color:var(--accent);font-weight:700}
+  @media(max-width:640px){.bottom-nav{height:50px}.nav-item i{font-size:24px}}
+
+  /* toast */
+  #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:140px;background:#222;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transition:opacity .25s;z-index:2000}
+  #toast.show{opacity:1}
