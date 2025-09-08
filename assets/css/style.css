@@ -21,12 +21,20 @@
   #suggestBox .type-cat{font-size:12px;color:#888;margin-left:6px}
 
   /* banner */
-  .banner-wrap{max-width:920px;margin:12px auto;padding:0 12px}
+/*   .banner-wrap{max-width:920px;margin:12px auto;padding:0 12px}
   .banner{background:linear-gradient(135deg,#1f2a44,#252f48);color:#fff;padding:12px;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
   .banner .left{display:flex;flex-direction:column;gap:6px}
   .banner .title{font-weight:700;font-size:15px}
   .banner .sub{opacity:0.9}
-  .banner .icon{width:56px;height:56px;object-fit:contain;border-radius:8px}
+  .banner .icon{width:56px;height:56px;object-fit:contain;border-radius:8px} */
+  #banner-carousel{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:.5rem;padding:.5rem;scrollbar-width:none;-ms-overflow-style:none}
+  #banner-carousel::-webkit-scrollbar{display:none}
+  .banner{flex:0 0 85%;min-height:75px;background:linear-gradient(135deg,#1a1f2c,#2b344a);color:#fff;border-radius:.8rem;display:flex;align-items:center;justify-content:space-between;padding:.8rem 1rem;box-shadow:0 4px 8px rgb(0 0 0 / .15);cursor:pointer;scroll-snap-align:start;transition:transform 0.2s}
+  .banner:hover{transform:scale(1.02)}
+  .banner-text{display:flex;flex-direction:column;justify-content:center}
+  .banner-title{font-size:1rem;font-weight:700;color:#fff}
+  .banner-subtitle{font-size:.85rem;color:rgb(255 255 255 / .8);margin-top:.25rem}
+  .banner-icon{width:50px;height:50px;object-fit:contain}
 
   /* categories chips (compact scroll grid 3 rows) */
   #catWrap{max-width:920px;margin:8px auto;padding:0 12px;overflow:hidden;display:none}
