@@ -110,9 +110,9 @@
 <body>
 
   <div class="hero">
-	  <header>
+<!-- 	  <header>
 		<button onclick="window.history.back()">← Назад</button>
-	  </header>	
+	  </header>	 -->
     <div class="date">Тест-драйв за 100</div>
     <h2>Подходит тем, кто хочет понять,<br>стоит ли заходить надолго</h2>
     <img src="../assets/img/banner1.png">
@@ -138,6 +138,15 @@
 
 </body>
 <script>
+
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.BackButton.show();
+tg.BackButton.onClick(() => {
+  tg.BackButton.hide();
+  window.location.href = 'index.html'; // или другой путь
+});
+	
 function openBot(botUsername) {
   window.location.href = `https://t.me/tribute/app?startapp=s898`;
 }
