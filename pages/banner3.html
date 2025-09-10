@@ -106,6 +106,18 @@
       background: #1052b3;
     }
   </style>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    const tg = window.Telegram.WebApp;
+
+    tg.ready();
+    tg.BackButton.show();  // показать кнопку «Назад»
+
+    tg.BackButton.onClick(() => {
+      tg.BackButton.hide();            // убираем кнопку
+      window.location.href = "dev.html"; // возвращаемся в каталог
+    });
+  </script>
 </head>
 <body>
 
