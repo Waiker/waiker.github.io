@@ -163,15 +163,15 @@ function renderCatalog(){
     cbBtn.innerHTML = STATE.watched.includes(c.url) ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-regular fa-eye"></i>';
     cbBtn.addEventListener('click',(ev)=>{ ev.stopPropagation(); toggleWatched(c); });
 
-    const delBtn = document.createElement('button'); delBtn.className='btn-icon';
-    delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
-    delBtn.addEventListener('click',(ev)=>{ ev.stopPropagation(); removeCourse(c); });
+    // const delBtn = document.createElement('button'); delBtn.className='btn-icon';
+    // delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+    // delBtn.addEventListener('click',(ev)=>{ ev.stopPropagation(); removeCourse(c); });
 
     card.addEventListener('click', ()=>{ window.open(c.url,'_blank') });
 
     actions.appendChild(bk);
     actions.appendChild(cbBtn);
-    actions.appendChild(delBtn);
+    // actions.appendChild(delBtn);
 
     card.appendChild(left); card.appendChild(actions);
     coursesWrap.appendChild(card);
