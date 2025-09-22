@@ -75,12 +75,6 @@ function renderSuggestions(q){
   const box = $('#suggestBox');
   box.innerHTML = '';
   if(!q || q.trim().length<1){ box.style.display='none'; return; }
-
-  // Добавляем анимацию скрытия
-  box.classList.remove('show');
-  setTimeout(() => {
-    box.style.display = 'none';
-  }, 300);
   
   const s = q.trim().toLowerCase();
   const results = autocompleteIndex.filter(i => i.value.includes(s)).slice(0,12);
@@ -366,6 +360,13 @@ $('#searchInput').addEventListener('keydown', function(e) {
     
     // Закрываем клавиатуру
     this.blur();
+  }
+});
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#suggestBox') && !e.target.closest('#searchInput')) {
+    $('#suggestBox').style.display = 'none';
+    $('#searchInput').blur();
   }
 });
 
