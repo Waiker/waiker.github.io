@@ -341,24 +341,26 @@ $all('.nav-item').forEach(n=>{
   });
 });
 
-$('#searchInput').addEventListener("keydown", function(e) {
-  if (e.key === "Enter") {
-    e.preventDefault(); // чтобы не было лишнего сабмита
-
+$('#searchInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
     const query = this.value.trim();
+    
+    // Сброс состояния
     STATE.query = query;
-    STATE.activeCategory = null; // сбрасываем фильтр по категории
-
-    // Скрыть подсказки
-    $('#suggestBox').style.display = "none";
-
-    // Перерисовать список курсов
+    STATE.activeCategory = null;
+    
+    // Скрываем подсказки
+    $('#suggestBox').style.display = 'none';
+    
+    // Обновляем интерфейс
     renderCategories();
     renderCatalog();
-
-    // Закрыть клавиатуру
+    
+    // Закрываем клавиатуру
     this.blur();
   }
+});
 
 
 /* promo open */
