@@ -341,6 +341,24 @@ $all('.nav-item').forEach(n=>{
   });
 });
 
+searchInput.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+        e.preventDefault(); // чтобы не было лишнего сабмита
+        const query = searchInput.value.trim();
+        
+        // Выполнить поиск по введённому запросу
+        activeCategory = null; // сбрасываем фильтр по категории
+        renderCourses(coursesData, query);
+
+        // Скрыть подсказки
+        suggestionsBox.innerHTML = "";
+
+        // Закрыть клавиатуру
+        searchInput.blur();
+    }
+});
+
+
 /* promo open */
 function openPromo(){ window.location.href = 'promo.html'; }
 
