@@ -93,9 +93,9 @@
   color: #fff;
 }
   
-/*   .btn-icon{background:transparent;border:0;font-size:20px;cursor:pointer;color:var(--muted)}
+  .btn-icon{background:transparent;border:0;font-size:20px;cursor:pointer;color:var(--muted)}
   .btn-icon.bookmarked{color:#f6a21a}
-  .watch-checkbox{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)} */
+  .watch-checkbox{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)}
 
   /* pages */
   .page{display:none;padding-bottom:140px}
