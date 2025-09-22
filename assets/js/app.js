@@ -99,7 +99,8 @@ function renderSuggestions(q){
         renderCategories();
         renderCatalog();
         // фокус обратно в поле поиска — удобно для быстрого снятия фильтра
-        $('#searchInput').focus();
+        // $('#searchInput').focus();
+        $('#searchInput').blur();
       };
     }
     box.appendChild(el);
