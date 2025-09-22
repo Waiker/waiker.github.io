@@ -71,43 +71,113 @@ function buildAutocompleteIndex(){
 }
 
 /* suggestions UI */
-function renderSuggestions(q){
-  const box = $('#suggestBox');
-  box.innerHTML = '';
-  if(!q || q.trim().length<1){ box.style.display='none'; return; }
+// function renderSuggestions(q){
+//   const box = $('#suggestBox');
+//   box.innerHTML = '';
+//   if(!q || q.trim().length<1){ box.style.display='none'; return; }
   
-  const s = q.trim().toLowerCase();
-  const results = autocompleteIndex.filter(i => i.value.includes(s)).slice(0,12);
-  if(results.length===0){ box.style.display='none'; return; }
-  results.forEach(r=>{
-    const el = document.createElement('div');
-    el.className = 'item';
-    if(r.type==='course'){
-      el.innerHTML = `<strong>${escapeHtml(r.ref.name)}</strong> <span style="color:#888;display:block;font-size:13px">${escapeHtml(r.ref.description || r.ref.url)}</span>`;
-      el.onclick = ()=>{ window.open(r.ref.url,'_blank'); box.style.display='none'; $('#searchInput').value=''; STATE.query=''; renderCatalog(); };
-    } else {
-      // el.innerHTML = `<span>#${escapeHtml(r.ref.name)}</span><span class="type-cat">категория</span>`;
-      // el.onclick = ()=>{ STATE.activeCategory = String(r.ref.id); $('#searchInput').value = ''; box.style.display='none'; renderCategories(); renderCatalog(); };
-      el.innerHTML = `<span>#${escapeHtml(r.ref.name)}</span><span class="type-cat">категория</span>`;
-      el.onclick = () => {
-        // Подставляем имя категории в поле поиска — пользователь видит активный фильтр
-        $('#searchInput').value = r.ref.name;
-        // Обновляем состояние (query нужен для фильтрации по тексту, activeCategory для чипов)
-        STATE.query = String(r.ref.name);
-        STATE.activeCategory = String(r.ref.id);
-        // Скрываем подсказки, обновляем визуалку
-        box.style.display = 'none';
-        renderCategories();
-        renderCatalog();
-        // фокус обратно в поле поиска — удобно для быстрого снятия фильтра
-        // $('#searchInput').focus();
-        $('#searchInput').blur();
-      };
-    }
-    box.appendChild(el);
+//   const s = q.trim().toLowerCase();
+//   const results = autocompleteIndex.filter(i => i.value.includes(s)).slice(0,12);
+//   if(results.length===0){ box.style.display='none'; return; }
+//   results.forEach(r=>{
+//     const el = document.createElement('div');
+//     el.className = 'item';
+//     if(r.type==='course'){
+//       el.innerHTML = `<strong>${escapeHtml(r.ref.name)}</strong> <span style="color:#888;display:block;font-size:13px">${escapeHtml(r.ref.description || r.ref.url)}</span>`;
+//       el.onclick = ()=>{ window.open(r.ref.url,'_blank'); box.style.display='none'; $('#searchInput').value=''; STATE.query=''; renderCatalog(); };
+//     } else {
+//       // el.innerHTML = `<span>#${escapeHtml(r.ref.name)}</span><span class="type-cat">категория</span>`;
+//       // el.onclick = ()=>{ STATE.activeCategory = String(r.ref.id); $('#searchInput').value = ''; box.style.display='none'; renderCategories(); renderCatalog(); };
+//       el.innerHTML = `<span>#${escapeHtml(r.ref.name)}</span><span class="type-cat">категория</span>`;
+//       el.onclick = () => {
+//         // Подставляем имя категории в поле поиска — пользователь видит активный фильтр
+//         $('#searchInput').value = r.ref.name;
+//         // Обновляем состояние (query нужен для фильтрации по тексту, activeCategory для чипов)
+//         STATE.query = String(r.ref.name);
+//         STATE.activeCategory = String(r.ref.id);
+//         // Скрываем подсказки, обновляем визуалку
+//         box.style.display = 'none';
+//         renderCategories();
+//         renderCatalog();
+//         // фокус обратно в поле поиска — удобно для быстрого снятия фильтра
+//         // $('#searchInput').focus();
+//         $('#searchInput').blur();
+//       };
+//     }
+//     box.appendChild(el);
+//   });
+//   box.style.display='block';
+// }
+
+function renderCatalog(){
+  const list = filterCourses();
+  const coursesWrap = $('#courses');
+  coursesWrap.innerHTML = '';
+  $('#countInfo').textContent = `${list.length} курса(ов)`;
+  // sorting
+  const sort = $('#sortSelect').value || 'name_asc';
+  list.sort((a,b)=>{
+    if(sort==='name_asc') return a.name.localeCompare(b.name,'ru');
+    if(sort==='name_desc') return b.name.localeCompare(a.name,'ru');
+    if(sort==='added_desc') return b.id - a.id;
+    return 0;
   });
-  box.style.display='block';
+
+  list.forEach(c=>{
+    const card = document.createElement('div'); card.className='course-card';
+    const left = document.createElement('div'); left.className='course-left';
+    const title = document.createElement('div'); title.className='course-title'; title.textContent=c.name;
+    const tags = document.createElement('div'); tags.className='course-tags';
+
+    (c.categories||[]).forEach(t => {
+      const tEl = document.createElement('div'); tEl.className='tag'; tEl.textContent = t;
+      // click on tag: prevent card click, set search input to category name and apply filter
+      tEl.addEventListener('click', (ev)=>{
+        ev.stopPropagation();
+        const cat = STATE.categories.find(x=>x.name===t);
+        if(cat){
+          STATE.activeCategory = cat.id;
+          $('#searchInput').value = cat.name;
+          STATE.query = cat.name;
+          $('#suggestBox').style.display='none';
+          renderCategoryChips();
+          renderCatalog();
+          $('#searchInput').focus();
+        }
+      });
+      tags.appendChild(tEl);
+    });
+
+    left.appendChild(title); left.appendChild(tags);
+
+    const actions = document.createElement('div'); actions.className='course-actions';
+    actions.style.flexDirection = 'row';
+    actions.style.justifyContent = 'flex-end';
+    actions.style.gap = '12px';
+
+    const bk = document.createElement('button'); bk.className='btn-icon'; bk.innerHTML = STATE.bookmarks.includes(c.url) ? '<i class="fa-solid fa-star"></i>' : '<i class="fa-regular fa-star"></i>';
+    if(STATE.bookmarks.includes(c.url)) bk.classList.add('bookmarked');
+    bk.addEventListener('click',(ev)=>{ ev.stopPropagation(); toggleBookmark(c); });
+
+    const cbBtn = document.createElement('button'); cbBtn.className='btn-icon';
+    cbBtn.innerHTML = STATE.watched.includes(c.url) ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-regular fa-eye"></i>';
+    cbBtn.addEventListener('click',(ev)=>{ ev.stopPropagation(); toggleWatched(c); });
+
+    const delBtn = document.createElement('button'); delBtn.className='btn-icon';
+    delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+    delBtn.addEventListener('click',(ev)=>{ ev.stopPropagation(); removeCourse(c); });
+
+    card.addEventListener('click', ()=>{ window.open(c.url,'_blank') });
+
+    actions.appendChild(bk);
+    actions.appendChild(cbBtn);
+    actions.appendChild(delBtn);
+
+    card.appendChild(left); card.appendChild(actions);
+    coursesWrap.appendChild(card);
+  })
 }
+
 function escapeHtml(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 
 /* ---------- Rendering ---------- */
