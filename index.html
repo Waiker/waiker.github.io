@@ -1,172 +1,121 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Каталог курсов</title>
-<style>
-body { font-family:sans-serif; background:#f4f4f4; margin:0; padding:1rem; }
-h1 { text-align:center; }
-.note { font-size:0.8rem; color:#666; text-align:center; margin:0 0 0.8rem; font-style:italic; }
-#search, #catSearch { display:block; margin:0 auto 1rem; padding:0.5rem; width:80%; font-size:1rem; }
-#categories {
-  display: grid;
-  grid-auto-flow: column;           /* колонки идут горизонтально */
-  grid-template-rows: repeat(3, auto); /* максимум 3 строки */
-  gap: 0.4rem;
-  overflow-x: auto;
-  padding: 0.5rem 0;
-  scrollbar-width: thin;
-  scrollbar-color: #ccc transparent;
-}
-
-#categories::-webkit-scrollbar {
-  height: 6px;
-}
-
-#categories::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 3px;
-}
-
-.category-chip {
-  padding: 0.4rem 0.7rem;
-  border-radius: 0.5rem;
-  background: #eee;
-  cursor: pointer;
-  user-select: none;
-  transition: all 0.2s;
-  font-size: 0.9rem;
-  white-space: nowrap;   /* чтобы текст не ломался */
-}
-
-.category-chip.active {
-  background: #1f6feb;
-  color: white;
-  font-weight: bold;
-  transform: scale(1.05);
-}
-
-
-#watching-now { max-width:600px; margin:1rem auto; padding:0.5rem; background:#fff8cc; border:1px solid #e0c400; border-radius:0.5rem; display:none; }
-#watching-now h2 { margin-top:0; font-size:1.1rem; }
-#watching-list .item, #catalog .item { background:#fff; margin-bottom:0.5rem; padding:0.8rem; border-radius:0.5rem; display:flex; justify-content:space-between; align-items:center; gap:0.5rem; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
-.item a { flex:1; text-decoration:none; color:inherit; }
-.bookmark-btn { background:none; border:none; font-size:1.2rem; cursor:pointer; color:#888; }
-.bookmarked { color:#f39c12; }
-#toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#333; color:white; padding:0.5rem 1rem; border-radius:0.3rem; opacity:0; transition:opacity 0.3s; z-index:999; }
-#toast.show { opacity:1; }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TWA — Каталог курсов</title>
+  
+  <!-- Font Awesome (иконки) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+  
+  <link rel="stylesheet" href="assets/css/style.css">
+  
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.BackButton.hide();
+  </script>
 </head>
 <body>
 
-<h1>Каталог курсов</h1>
-<input type="text" id="search" placeholder="Поиск курса...">
-<input type="text" id="catSearch" placeholder="Поиск категории...">
-<div id="categories"></div>
-<p class="note">При нажатии на курс откроется пост в канале. Только для вступивших в приват.</p>
+  <!-- header with new compact search -->
+  <div class="topbar">
+    <div class="search-wrap">
+      <div class="search" role="search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input id="searchInput" placeholder="Поиск курса или категории..." autocomplete="off" />
+      </div>
 
-<div id="watching-now">
-  <h2>Смотрю сейчас</h2>
-  <div id="watching-list"></div>
-</div>
+      <!-- suggestions dropdown -->
+      <div id="suggestBox" aria-hidden="true"></div>
+    </div>
+  </div>
 
-<div id="catalog"></div>
-<div id="toast">Добавлено в закладки</div>
+  <div class="banner-wrap">
+    <div id="banner-carousel">
+      <div class="banner" style="background: radial-gradient(87.56% 85.19% at 87.37% -15.14%, rgb(83, 255, 214) 0%, rgba(51, 169, 255, 0) 100%), radial-gradient(67.94% 70.77% at 0% 100%, rgb(113, 195, 255) 0%, rgb(93, 99, 255) 100%);" onclick="window.location.href='pages/banner1.html'">
+        <div class="banner-text">
+          <div class="banner-title">🔥 Неделя тренировок для новых пользователей</div>
+          <div class="banner-subtitle">Подробнее ></a></div>
+        </div>
+        <img class="banner-icon" src="assets/img/banner1.png" alt="Неделя тренировок">
+      </div>
+    
+      <div class="banner" style="background: linear-gradient(to right, #7B4FFF, #8E2DE2, #9C2ACE)" onclick="window.location.href='pages/banner2.html'">
+        <div class="banner-text">
+          <div class="banner-title">🎯 Для тех, кто знает чего хочет</div>
+          <div class="banner-subtitle">Подробнее ></div>
+        </div>
+        <img class="banner-icon" src="assets/img/banner2.png" alt="Месяц тренировок">
+      </div>
+      
+        <div class="banner" style="background-image: linear-gradient(45deg, #FFD700, #CD853F)" onclick="window.location.href='pages/banner3.html'">
+        <div class="banner-text">
+          <div class="banner-title">🎯 Возможность заработка для владельцев каналов</div>
+          <div class="banner-subtitle">Подробнее ></div>
+        </div>
+        <img class="banner-icon" src="assets/img/banner3.png" alt="Заработать">
+      </div>
+    </div>
+    </div>
 
-<script>
-const STORAGE_KEY = 'bookmarkedCourses';
-const API_URL = 'https://cp.wtfbjj.ru/api/public.php?token=603B591160C537C6D962926C3A9AB2DF';
+  
+  
+<!--   categories -->
+  <div id="catWrap">
+    <div id="categories" aria-label="Категории"></div>
+  </div>
 
-let allCourses = [];
-let allCategories = [];
-let activeCategoryId = null;
+  <!-- main content area -->
+  <main class="container">
 
-async function loadData() {
-  const res = await fetch(API_URL + '&_=' + Date.now());
-  const data = await res.json();
-  allCourses = data.courses.map(c => ({ ...c }));
-  allCategories = data.categories;
-}
+    <!-- CATALOG PAGE -->
+    <section id="page-catalog" class="page active">
+      <div class="controls">
+        <div class="small-muted" id="countInfo">Загрузка...</div>
+        <div style="margin-left:auto">
+          <select id="sortSelect" style="padding:6px;border-radius:8px;border:1px solid #e6e9f0;background:#fff">
+            <option value="name_asc">По имени (А→Я)</option>
+            <option value="name_desc">По имени (Я→А)</option>
+            <option value="added_desc">По дате добавления</option>
+          </select>
+        </div>
+      </div>
 
-function getBookmarks() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
-}
-function saveBookmarks(bookmarks) { localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks)); }
-function isBookmarked(url) { return getBookmarks().includes(url); }
-function showToast(msg) { const t = document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1500); }
+      <div id="courses" class="courses"></div>
+    </section>
 
-function toggleBookmark(name,url){
-  let bookmarks = getBookmarks();
-  if(bookmarks.includes(url)){ bookmarks = bookmarks.filter(u=>u!==url); } 
-  else { bookmarks.push(url); showToast('Добавлено в закладки'); }
-  saveBookmarks(bookmarks);
-  renderCatalog();
-  renderWatchingNow();
-}
+    <!-- BOOKMARKS PAGE -->
+    <section id="page-bookmarks" class="page">
+      <div style="display:flex;gap:8px;align-items:center">
+        <h2 style="margin:0">Закладки</h2>
+        <select id="bmSort" style="margin-left:auto;padding:6px;border-radius:8px;border:1px solid #e6e9f0;background:#fff">
+          <option value="added_desc">По дате (новые)</option>
+          <option value="added_asc">По дате (старые)</option>
+          <option value="name_asc">По имени</option>
+        </select>
+      </div>
+      <div id="bookmarksList" class="courses" style="margin-top:12px"></div>
+    </section>
 
-function renderCatalog(){
-  const catalog = document.getElementById('catalog');
-  const q = document.getElementById('search').value.toLowerCase();
-  catalog.innerHTML='';
-  let items = allCourses.filter(c=>c.name.toLowerCase().includes(q));
-  if(activeCategoryId) items = items.filter(c=>c.category_ids.includes(activeCategoryId));
-  if(!items.length){ catalog.innerHTML='<div class="muted">Курсы не найдены</div>'; return; }
-  items.forEach(c=>{
-    const div = document.createElement('div'); div.className='item';
-    const a = document.createElement('a'); a.href=c.url; a.target='_blank'; a.textContent=c.name;
-    const btn = document.createElement('button'); btn.className='bookmark-btn'; btn.innerHTML=isBookmarked(c.url)?'★':'☆';
-    if(isBookmarked(c.url)) btn.classList.add('bookmarked');
-    btn.onclick = ()=>toggleBookmark(c.name,c.url);
-    div.appendChild(btn); div.appendChild(a); catalog.appendChild(div);
-  });
-}
+    <!-- WATCHED PAGE -->
+    <section id="page-watched" class="page">
+      <h2 style="margin:0 0 8px 0">Просмотрено</h2>
+      <div id="watchedList" class="courses"></div>
+    </section>
 
-function renderWatchingNow(){
-  const container = document.getElementById('watching-now');
-  const list = document.getElementById('watching-list');
-  const bookmarks = getBookmarks();
-  const bookmarkedItems = allCourses.filter(c=>bookmarks.includes(c.url));
-  list.innerHTML='';
-  if(!bookmarkedItems.length){ container.style.display='none'; return; }
-  container.style.display='block';
-  bookmarkedItems.forEach(c=>{
-    const div = document.createElement('div'); div.className='item';
-    const a = document.createElement('a'); a.href=c.url; a.target='_blank'; a.textContent=c.name;
-    const btn = document.createElement('button'); btn.className='bookmark-btn bookmarked'; btn.innerHTML='★';
-    btn.onclick=()=>toggleBookmark(c.name,c.url);
-    div.appendChild(btn); div.appendChild(a); list.appendChild(div);
-  });
-}
+  </main>
 
-function renderCategories(){
-  const mount = document.getElementById('categories');
-  const q = document.getElementById('catSearch').value.toLowerCase();
-  mount.innerHTML='';
-  const cats = allCategories.filter(c=>c.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
-  cats.forEach(c=>{
-    const chip = document.createElement('div');
-    chip.className='category-chip'+(activeCategoryId==c.id?' active':'');
-    chip.textContent='#'+c.name;
-    chip.onclick=()=>{
-      if(activeCategoryId==c.id) activeCategoryId=null; else activeCategoryId=c.id;
-      renderCategories();
-      renderCatalog();
-    };
-    mount.appendChild(chip);
-  });
-}
+  <div id="toast"></div>
 
-document.getElementById('search').addEventListener('input',renderCatalog);
-document.getElementById('catSearch').addEventListener('input',renderCategories);
+  <!-- bottom nav -->
+  <nav class="bottom-nav" role="navigation">
+    <div class="nav-item active" data-target="page-catalog"><i class="fa-solid fa-book"></i>Каталог</div>
+    <div class="nav-item" data-target="page-bookmarks"><i class="fa-solid fa-star"></i>Закладки</div>
+    <div class="nav-item" data-target="page-watched"><i class="fa-solid fa-check"></i>Просмотрено</div>
+  </nav>
 
-window.addEventListener('DOMContentLoaded', async ()=>{
-  await loadData();
-  renderCategories();
-  renderCatalog();
-  renderWatchingNow();
-});
-</script>
-
+<script src="assets/js/app.js"></script>
 </body>
 </html>
