@@ -18,6 +18,14 @@ let STATE = {
 
 /* helpers */
 function $(sel){ return document.querySelector(sel) }
+function getTelegramUser(){
+  try {
+    const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    if (!user) return { photoUrl: null, displayName: 'Гость' };
+    const name = user.username ? '@' + user.username : [user.first_name, user.last_name].filter(Boolean).join(' ');
+    return { photoUrl: user.photo_url || null, displayName: name || 'Гость' };
+  } catch (e) { return { photoUrl: null, displayName: 'Гость' }; }
+}
 function $all(sel){ return Array.from(document.querySelectorAll(sel)) }
 function loadJSON(k,d){ try{ const t=localStorage.getItem(k); return t?JSON.parse(t):d; }catch(e){ return d; } }
 function saveJSON(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
@@ -187,6 +195,7 @@ function renderAll(){
   renderCatalog();
   renderBookmarks();
   renderWatched();
+  renderProfile();
 }
 
 function renderCategoryChips(){
@@ -222,7 +231,7 @@ function toggleBookmark(course){
   const i = STATE.bookmarks.indexOf(course.url);
   if(i>=0){ STATE.bookmarks.splice(i,1); delete STATE.bmMeta[course.url]; saveJSON(KEY_BOOKMARKS, STATE.bookmarks); saveJSON(KEY_BM_META, STATE.bmMeta); showToast('Удалено из закладок'); }
   else { STATE.bookmarks.push(course.url); STATE.bmMeta[course.url] = { addedAt: Date.now(), name: course.name }; saveJSON(KEY_BOOKMARKS, STATE.bookmarks); saveJSON(KEY_BM_META, STATE.bmMeta); showToast('Добавлено в закладки'); }
-  renderCatalog(); renderBookmarks();
+  renderCatalog(); renderBookmarks(); renderProfile();
 }
 function renderBookmarks(){
   const mount = $('#bookmarksList'); mount.innerHTML='';
@@ -258,7 +267,7 @@ function toggleWatched(course){
 function renderWatched(){
   const mount = $('#watchedList'); mount.innerHTML='';
   const items = STATE.watched.map(url => STATE.courses.find(c=>c.url===url)).filter(Boolean);
-  if(items.length===0){ mount.innerHTML = '<div style="color:#888">Нет просмотренных курсов</div>'; return; }
+  if(items.length===0){ mount.innerHTML = '<div style="color:#888">Нет просмотренных курсов</div>'; renderProfile(); return; }
   items.forEach(c=>{
     const card = document.createElement('div'); card.className='course-card';
     const left = document.createElement('div'); left.className='course-left';
@@ -269,6 +278,52 @@ function renderWatched(){
     actions.appendChild(openBtn); actions.appendChild(rm);
     card.appendChild(left); card.appendChild(actions);
     mount.appendChild(card);
+  });
+  renderProfile();
+}
+
+/* profile */
+function renderProfile(){
+  const avatarEl = $('#profileAvatar');
+  const nameEl = $('#profileName');
+  const progressText = $('#profileProgressText');
+  const progressFill = $('#profileProgressFill');
+  const progressHint = $('#profileProgressHint');
+  const bookmarksCount = $('#profileBookmarksCount');
+  const achievementsEl = $('#profileAchievements');
+  if (!avatarEl || !nameEl) return;
+
+  const user = getTelegramUser();
+  avatarEl.innerHTML = '';
+  avatarEl.style.backgroundImage = '';
+  if (user.photoUrl) {
+    avatarEl.style.backgroundImage = 'url(' + user.photoUrl + ')';
+  } else {
+    const icon = document.createElement('i');
+    icon.className = 'fa-solid fa-user';
+    avatarEl.appendChild(icon);
+  }
+  nameEl.textContent = user.displayName;
+
+  const watched = STATE.watched.length;
+  const total = STATE.courses.length;
+  const pct = total > 0 ? Math.round((watched / total) * 100) : 0;
+  progressText.textContent = watched + ' из ' + total + ' курсов';
+  progressFill.style.width = pct + '%';
+  progressHint.textContent = 'Вы просмотрели ' + watched + ' курсов из ' + total + ' в каталоге';
+
+  bookmarksCount.textContent = STATE.bookmarks.length;
+
+  const achievements = [];
+  if (watched >= 1) achievements.push({ label: 'Первый шаг', icon: 'fa-seedling' });
+  if (watched >= 5) achievements.push({ label: 'Активный ученик', icon: 'fa-graduation-cap' });
+  if (watched >= 10) achievements.push({ label: 'Мастер', icon: 'fa-trophy' });
+  achievementsEl.innerHTML = '';
+  achievements.forEach(a => {
+    const b = document.createElement('span');
+    b.className = 'profile-achievement';
+    b.innerHTML = '<i class="fa-solid ' + a.icon + '"></i> ' + escapeHtml(a.label);
+    achievementsEl.appendChild(b);
   });
 }
 
@@ -337,6 +392,7 @@ $all('.nav-item').forEach(n=>{
     const target = n.dataset.target;
     $all('.page').forEach(p=>p.classList.remove('active'));
     document.getElementById(target).classList.add('active');
+    if (target === 'page-profile') renderProfile();
     window.scrollTo(0,0);
   });
 });
