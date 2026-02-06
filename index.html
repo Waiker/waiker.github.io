@@ -2,30 +2,13 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>TWA — Каталог курсов</title>
-  
-  <!-- Yandex.Metrika counter -->
-  <script type="text/javascript">
-      (function(m,e,t,r,i,k,a){
-          m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-          m[i].l=1*new Date();
-          for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
-          k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-      })(window, document,'script','https://mc.yandex.ru/metrika/tag.js', 'ym');
-  
-      ym(103115228, 'init', {webvisor:true, clickmap:true, accurateTrackBounce:true, trackLinks:true});
-  </script>
-  <noscript><div><img src="https://mc.yandex.ru/watch/103115228" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
-  <!-- /Yandex.Metrika counter -->
-
-
-
   
   <!-- Font Awesome (иконки) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
   
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/style.css" />
   
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
@@ -54,7 +37,7 @@
       <div class="banner" style="background: radial-gradient(87.56% 85.19% at 87.37% -15.14%, rgb(83, 255, 214) 0%, rgba(51, 169, 255, 0) 100%), radial-gradient(67.94% 70.77% at 0% 100%, rgb(113, 195, 255) 0%, rgb(93, 99, 255) 100%);" onclick="window.location.href='pages/banner1.html'">
         <div class="banner-text">
           <div class="banner-title">🔥 Неделя тренировок для новых пользователей</div>
-          <div class="banner-subtitle">Подробнее ></a></div>
+          <div class="banner-subtitle">Подробнее ></div>
         </div>
         <img class="banner-icon" src="assets/img/banner1.png" alt="Неделя тренировок">
       </div>
@@ -75,7 +58,12 @@
         <img class="banner-icon" src="assets/img/banner3.png" alt="Заработать">
       </div>
     </div>
+    <div class="banner-dots" aria-hidden="true">
+      <span class="banner-dot active"></span>
+      <span class="banner-dot"></span>
+      <span class="banner-dot"></span>
     </div>
+  </div>
 
   
   
@@ -122,6 +110,7 @@
       <div id="watchedList" class="courses"></div>
     </section>
 
+
   </main>
 
   <div id="toast"></div>
@@ -131,6 +120,7 @@
     <div class="nav-item active" data-target="page-catalog"><i class="fa-solid fa-book"></i>Каталог</div>
     <div class="nav-item" data-target="page-bookmarks"><i class="fa-solid fa-star"></i>Закладки</div>
     <div class="nav-item" data-target="page-watched"><i class="fa-solid fa-check"></i>Просмотрено</div>
+    <a class="nav-item" href="pages/profile.html"><i class="fa-solid fa-user"></i>Профиль</a>
   </nav>
 
 <script src="assets/js/app.js"></script>
