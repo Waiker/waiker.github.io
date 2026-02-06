@@ -100,6 +100,31 @@
       <div id="watchedList" class="courses"></div>
     </section>
 
+    <section id="page-profile" class="page">
+      <div class="profile-card">
+        <div class="profile-header">
+          <div id="profileAvatar" class="profile-avatar"></div>
+          <div id="profileName" class="profile-name">Загрузка...</div>
+        </div>
+        <div class="profile-progress-wrap">
+          <div class="profile-progress-label">
+            <span id="profileProgressText">0 из 0 курсов</span>
+          </div>
+          <div class="profile-progress-bar">
+            <div id="profileProgressFill" class="profile-progress-fill" style="width:0%"></div>
+          </div>
+          <div class="profile-progress-hint" id="profileProgressHint">Вы просмотрели 0 курсов из 0 в каталоге</div>
+        </div>
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <i class="fa-solid fa-star"></i>
+            <span id="profileBookmarksCount">0</span> в закладках
+          </div>
+          <div id="profileAchievements" class="profile-achievements"></div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <div id="toast"></div>
@@ -108,6 +133,7 @@
     <div class="nav-item active" data-target="page-catalog"><i class="fa-solid fa-book"></i>Каталог</div>
     <div class="nav-item" data-target="page-bookmarks"><i class="fa-solid fa-star"></i>Закладки</div>
     <div class="nav-item" data-target="page-watched"><i class="fa-solid fa-check"></i>Просмотрено</div>
+    <div class="nav-item" data-target="page-profile"><i class="fa-solid fa-user"></i>Профиль</div>
   </nav>
 
   <script src="assets/js/app.js"></script>
