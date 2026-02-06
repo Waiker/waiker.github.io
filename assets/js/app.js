@@ -392,7 +392,12 @@ $all('.nav-item').forEach(n=>{
     const target = n.dataset.target;
     $all('.page').forEach(p=>p.classList.remove('active'));
     document.getElementById(target).classList.add('active');
-    if (target === 'page-profile') renderProfile();
+    if (target === 'page-profile') {
+      document.body.classList.add('profile-page-active');
+      renderProfile();
+    } else {
+      document.body.classList.remove('profile-page-active');
+    }
     window.scrollTo(0,0);
   });
 });
