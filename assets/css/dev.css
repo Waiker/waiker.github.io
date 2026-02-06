@@ -272,6 +272,17 @@ body {
   margin-top: 14px;
 }
 
+/* ——— Profile page: hide catalog chrome ——— */
+body.profile-page-active .topbar,
+body.profile-page-active .banner-wrap,
+body.profile-page-active #catWrap {
+  display: none;
+}
+
+body.profile-page-active .container {
+  padding-top: 16px;
+}
+
 /* ——— Profile ——— */
 .profile-card {
   background: var(--card);
