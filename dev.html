@@ -2,87 +2,146 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>TWA — Каталог курсов</title>
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>TWA — Каталог курсов (dev)</title>
+
   <!-- Font Awesome (иконки) -->
-  <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
-  
-  <link rel="stylesheet" href="assets/css/style.css">
-   -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/dev.css" />
+
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.BackButton.hide();
+  </script>
 </head>
 <body>
-</body>
-<script>
-   const tg = window.Telegram.WebApp;
-  tg.ready();
-  tg.BackButton.hide();
 
-  // Создаём блок для вывода логов
-  const output = document.createElement('pre');
-  output.id = 'auth-output';
-  output.style.whiteSpace = 'pre-wrap';
-  output.style.padding = '10px';
-  output.style.fontFamily = 'monospace';
-  output.style.background = '#f3f3f3';
-  output.style.border = '1px solid #ccc';
-  output.style.margin = '10px';
-  document.body.appendChild(output);
+  <!-- header with compact search -->
+  <div class="topbar">
+    <div class="search-wrap">
+      <div class="search" role="search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input id="searchInput" placeholder="Поиск курса или категории..." autocomplete="off" />
+      </div>
+      <div id="suggestBox" aria-hidden="true"></div>
+    </div>
+  </div>
 
-  function print(msg) {
-    output.textContent += msg + '\n';
-  }
+  <div class="banner-wrap">
+    <div id="banner-carousel">
+      <div class="banner" style="background: radial-gradient(87.56% 85.19% at 87.37% -15.14%, rgb(83, 255, 214) 0%, rgba(51, 169, 255, 0) 100%), radial-gradient(67.94% 70.77% at 0% 100%, rgb(113, 195, 255) 0%, rgb(93, 99, 255) 100%);" onclick="window.location.href='pages/banner1.html'">
+        <div class="banner-text">
+          <div class="banner-title">🔥 Неделя тренировок для новых пользователей</div>
+          <div class="banner-subtitle">Подробнее ></div>
+        </div>
+        <img class="banner-icon" src="assets/img/banner1.png" alt="Неделя тренировок">
+      </div>
+      <div class="banner" style="background: linear-gradient(to right, #7B4FFF, #8E2DE2, #9C2ACE)" onclick="window.location.href='pages/banner2.html'">
+        <div class="banner-text">
+          <div class="banner-title">🎯 Для тех, кто знает чего хочет</div>
+          <div class="banner-subtitle">Подробнее ></div>
+        </div>
+        <img class="banner-icon" src="assets/img/banner2.png" alt="Месяц тренировок">
+      </div>
+      <div class="banner" style="background-image: linear-gradient(45deg, #FFD700, #CD853F)" onclick="window.location.href='pages/banner3.html'">
+        <div class="banner-text">
+          <div class="banner-title">🎯 Возможность заработка для владельцев каналов</div>
+          <div class="banner-subtitle">Подробнее ></div>
+        </div>
+        <img class="banner-icon" src="assets/img/banner3.png" alt="Заработать">
+      </div>
+    </div>
+    <!-- Индикаторы карусели (только в dev) -->
+    <div class="banner-dots" aria-hidden="true">
+      <span class="banner-dot active"></span>
+      <span class="banner-dot"></span>
+      <span class="banner-dot"></span>
+    </div>
+  </div>
 
-  // Обёртка try/catch для отлова глобальных ошибок
-  try {
-    print('Telegram WebApp ready...');
-    print('tg.initData: ' + (tg.initData || 'пусто'));
+  <div id="catWrap">
+    <div id="categories" aria-label="Категории"></div>
+  </div>
 
-    async function telegramAuth() {
-      try {
-        if (!tg.initData) {
-          print('Ошибка: initData отсутствует!');
-          return;
-        }
+  <main class="container">
 
-        const res = await fetch('https://dev.wtfbjj.ru/api/auth.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ initData: tg.initData })
-        });
+    <section id="page-catalog" class="page active">
+      <div class="controls">
+        <div class="small-muted" id="countInfo">Загрузка...</div>
+        <div style="margin-left:auto">
+          <select id="sortSelect">
+            <option value="name_asc">По имени (А→Я)</option>
+            <option value="name_desc">По имени (Я→А)</option>
+            <option value="added_desc">По дате добавления</option>
+          </select>
+        </div>
+      </div>
+      <div id="courses" class="courses"></div>
+    </section>
 
-        print('Ответ от fetch получен, статус: ' + res.status);
+    <section id="page-bookmarks" class="page">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <h2 style="margin:0">Закладки</h2>
+        <select id="bmSort" style="margin-left:auto">
+          <option value="added_desc">По дате (новые)</option>
+          <option value="added_asc">По дате (старые)</option>
+          <option value="name_asc">По имени</option>
+        </select>
+      </div>
+      <div id="bookmarksList" class="courses" style="margin-top:12px"></div>
+    </section>
 
-        let data;
+    <section id="page-watched" class="page">
+      <h2 style="margin:0 0 8px 0">Просмотрено</h2>
+      <div id="watchedList" class="courses"></div>
+    </section>
+
+  </main>
+
+  <div id="toast"></div>
+
+  <nav class="bottom-nav" role="navigation">
+    <div class="nav-item active" data-target="page-catalog"><i class="fa-solid fa-book"></i>Каталог</div>
+    <div class="nav-item" data-target="page-bookmarks"><i class="fa-solid fa-star"></i>Закладки</div>
+    <div class="nav-item" data-target="page-watched"><i class="fa-solid fa-check"></i>Просмотрено</div>
+  </nav>
+
+  <script src="assets/js/app.js"></script>
+
+  <!-- Отладка авторизации (раскомментировать при необходимости)
+  <script>
+    const output = document.createElement('pre');
+    output.id = 'auth-output';
+    output.style.cssText = 'white-space:pre-wrap;padding:10px;font-family:monospace;background:#f3f3f3;border:1px solid #ccc;margin:10px;';
+    document.body.appendChild(output);
+    function print(msg) { output.textContent += msg + '\n'; }
+    try {
+      print('Telegram WebApp ready...');
+      print('tg.initData: ' + (tg.initData || 'пусто'));
+      async function telegramAuth() {
         try {
-          data = await res.json();
-        } catch (jsonErr) {
-          print('Ошибка парсинга JSON: ' + jsonErr.message);
-          const text = await res.text();
-          print('Текст ответа: ' + text);
-          return;
-        }
-
-        if (!res.ok) {
-          print('Ошибка авторизации: ' + JSON.stringify(data));
-          return;
-        }
-
-        print('JWT token: ' + data.token);
-        print('Пользователь: ' + JSON.stringify(data.user));
-        localStorage.setItem('jwt_token', data.token);
-        tg.BackButton.show();
-        print('Авторизация прошла успешно!');
-      } catch (err) {
-        print('Ошибка запроса fetch: ' + err.message);
+          if (!tg.initData) { print('Ошибка: initData отсутствует!'); return; }
+          const res = await fetch('https://dev.wtfbjj.ru/api/auth.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ initData: tg.initData })
+          });
+          print('Ответ: ' + res.status);
+          const data = await res.json();
+          if (!res.ok) { print('Ошибка: ' + JSON.stringify(data)); return; }
+          localStorage.setItem('jwt_token', data.token);
+          tg.BackButton.show();
+          print('Авторизация успешна');
+        } catch (err) { print('Ошибка: ' + err.message); }
       }
-    }
+      telegramAuth();
+    } catch (err) { print('Глобальная ошибка: ' + err.message); }
+  </script>
+  -->
 
-    telegramAuth();
-
-  } catch (err) {
-    print('Глобальная ошибка: ' + err.message);
-  }
-</script>
+</body>
 </html>
