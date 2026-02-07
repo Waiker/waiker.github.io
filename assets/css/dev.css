@@ -298,11 +298,28 @@ body.profile-page-active .container {
 
 /* Hero */
 .profile-hero {
+  position: relative;
   background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e3a5f 100%);
   margin: -16px -16px 0;
   padding: 28px 20px;
   border-radius: 0 0 var(--radius) var(--radius);
   text-align: center;
+  color: #fff;
+}
+
+.profile-edit-icon-btn--hero {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #fff;
+}
+
+.profile-edit-icon-btn--hero:hover,
+.profile-edit-icon-btn--hero:active {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.6);
   color: #fff;
 }
 
@@ -348,6 +365,70 @@ body.profile-page-active .container {
   width: 20px;
   height: 20px;
   object-fit: contain;
+}
+
+.profile-belt-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+}
+
+.profile-belt-icon-wrap .profile-hero-badge-icon {
+  width: 24px;
+  height: 24px;
+}
+
+/* Progress card */
+.profile-progress-card {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+}
+
+.profile-progress-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.profile-progress-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.profile-progress-header .profile-progress-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.profile-progress-bar {
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.profile-progress-bar--large {
+  height: 10px;
+  background: rgba(37, 99, 235, 0.2);
+  margin-bottom: 10px;
+}
+
+.profile-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.profile-progress-card .profile-progress-hint {
+  margin: 0;
+  font-size: 13px;
+  color: #1e40af;
+  opacity: 0.85;
 }
 
 /* Stats grid */
