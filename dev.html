@@ -131,24 +131,32 @@
           <div id="profileAchievements" class="profile-achievements"></div>
         </div>
 
-        <!-- Belt & Division: form or display -->
+        <!-- Belt, Division, Club: form or display -->
         <div class="profile-section profile-belt-section">
+          <div class="profile-section-header">
+            <h2 class="profile-section-title">Информация о вас</h2>
+            <button type="button" id="profileEditBtn" class="profile-edit-icon-btn" title="Редактировать" aria-label="Редактировать">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+          </div>
           <div id="profileBeltDisplay" class="profile-belt-display" style="display:none">
             <div class="profile-belt-card">
               <img id="profileBeltIcon" class="profile-belt-icon" src="" alt="">
               <div class="profile-belt-info">
                 <span id="profileBeltLabel" class="profile-belt-label"></span>
                 <span id="profileDivisionBadge" class="profile-division-badge"></span>
+                <span id="profileClubDisplay" class="profile-club-row" style="display:none"></span>
               </div>
             </div>
-            <button type="button" id="profileEditBeltBtn" class="profile-edit-btn">Изменить</button>
           </div>
           <div id="profileBeltForm" class="profile-belt-form">
-            <h3 class="profile-form-title">Выберите пояс и раздел</h3>
+            <h3 class="profile-form-title">Пояс, раздел и клуб</h3>
             <label class="profile-form-label">Пояс</label>
             <div id="profileBeltPicker" class="profile-belt-picker"></div>
             <label class="profile-form-label">Раздел</label>
             <div id="profileDivisionPicker" class="profile-division-picker"></div>
+            <label class="profile-form-label">Клуб <span class="profile-form-optional">(необязательно)</span></label>
+            <input type="text" id="profileClubInput" class="profile-club-input" placeholder="Название клуба" maxlength="100" autocomplete="off">
             <div class="profile-form-actions">
               <button type="button" id="profileCancelBeltBtn" class="profile-cancel-btn" style="display:none">Отмена</button>
               <button type="button" id="profileSaveBeltBtn" class="profile-save-btn">Сохранить</button>

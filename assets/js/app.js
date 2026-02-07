@@ -7,6 +7,15 @@ const KEY_WATCHED = 'watchedCourses';
 const KEY_BM_META = 'bookmarksMetaCourses';
 const KEY_PROFILE = 'userProfile';
 
+const CLUB_MAX_LENGTH = 100;
+const CLUB_ALLOWED_REGEX = /[^\p{L}\p{N}\s\-'().,]/gu;
+
+function sanitizeClub(value) {
+  let s = String(value || '').trim();
+  s = s.replace(CLUB_ALLOWED_REGEX, '').replace(/\s+/g, ' ').trim();
+  return s.slice(0, CLUB_MAX_LENGTH);
+}
+
 const MARK_COOLDOWN_MS = 2500;
 let lastMarkAt = 0;
 let profileEditMode = false; /* true = показывать форму редактирования пояса/категории */
@@ -19,7 +28,7 @@ let STATE = {
   bookmarks: loadJSON(KEY_BOOKMARKS, []),
   watched: loadJSON(KEY_WATCHED, []),
   bmMeta: loadJSON(KEY_BM_META, {}),
-  profile: loadJSON(KEY_PROFILE, { belt: '', division: '', status: '' })
+  profile: loadJSON(KEY_PROFILE, { belt: '', division: '', club: '', status: '' })
 };
 
 /* helpers */
@@ -328,8 +337,11 @@ function renderProfile(){
   const beltIconEl = $('#profileBeltIcon');
   const beltLabelEl = $('#profileBeltLabel');
   const divisionBadgeEl = $('#profileDivisionBadge');
+  const clubDisplayEl = $('#profileClubDisplay');
+  const clubInputEl = $('#profileClubInput');
   const beltPickerEl = $('#profileBeltPicker');
   const divisionPickerEl = $('#profileDivisionPicker');
+  const editIconBtn = $('#profileEditBtn');
 
   if (!avatarEl || !nameEl) return;
 
@@ -368,7 +380,8 @@ function renderProfile(){
     });
   }
 
-  /* belt & division */
+  /* belt, division, club (миграция: club может отсутствовать, санитизация при чтении) */
+  const club = sanitizeClub(STATE.profile.club);
   const hasBeltAndDivision = !!(STATE.profile.belt && STATE.profile.division);
   const divisions = (typeof PROFILE_CONFIG !== 'undefined' && PROFILE_CONFIG.divisions) ? PROFILE_CONFIG.divisions : [];
 
@@ -423,9 +436,26 @@ function renderProfile(){
       }
       if (beltLabelEl) beltLabelEl.textContent = beltCfg ? beltCfg.label : STATE.profile.belt;
       if (divisionBadgeEl) divisionBadgeEl.textContent = divCfg ? divCfg.label : STATE.profile.division;
+      if (clubDisplayEl) {
+        if (club) {
+          clubDisplayEl.style.display = '';
+          clubDisplayEl.innerHTML = '';
+          const icon = document.createElement('i');
+          icon.className = 'fa-solid fa-building';
+          clubDisplayEl.appendChild(icon);
+          clubDisplayEl.appendChild(document.createTextNode(' ' + club));
+        } else {
+          clubDisplayEl.style.display = 'none';
+        }
+      }
+      if (editIconBtn) editIconBtn.style.display = '';
     } else {
       beltDisplayEl.style.display = 'none';
       beltFormEl.style.display = 'block';
+      if (editIconBtn) editIconBtn.style.display = 'none';
+
+      /* club input value */
+      if (clubInputEl) clubInputEl.value = club;
 
       /* belt picker */
       if (beltPickerEl) {
@@ -473,11 +503,10 @@ function renderProfile(){
   if (cancelBtn) cancelBtn.style.display = profileEditMode ? 'inline-block' : 'none';
 
   /* bind events (once) */
-  const editBtn = $('#profileEditBeltBtn');
   const saveBtn = $('#profileSaveBeltBtn');
-  if (editBtn && !editBtn.dataset.bound) {
-    editBtn.dataset.bound = '1';
-    editBtn.addEventListener('click', () => {
+  if (editIconBtn && !editIconBtn.dataset.bound) {
+    editIconBtn.dataset.bound = '1';
+    editIconBtn.addEventListener('click', () => {
       profileEditMode = true;
       renderProfile();
     });
@@ -500,6 +529,7 @@ function renderProfile(){
       }
       STATE.profile.belt = selBelt.dataset.beltId;
       STATE.profile.division = selDiv.dataset.division;
+      STATE.profile.club = clubInputEl ? sanitizeClub(clubInputEl.value) : '';
       saveJSON(KEY_PROFILE, STATE.profile);
       profileEditMode = false;
       showToast('Сохранено');
