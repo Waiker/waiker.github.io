@@ -9,6 +9,7 @@ const KEY_PROFILE = 'userProfile';
 
 const MARK_COOLDOWN_MS = 2500;
 let lastMarkAt = 0;
+let profileEditMode = false; /* true = показывать форму редактирования пояса/категории */
 
 let STATE = {
   courses: [],
@@ -301,6 +302,17 @@ function renderWatched(){
   renderProfile();
 }
 
+/* profile: helpers for belt config */
+function getBeltsConfig(){
+  const raw = (typeof PROFILE_CONFIG !== 'undefined' && PROFILE_CONFIG.beltColors) ? PROFILE_CONFIG.beltColors : [];
+  return raw.map(b => typeof b === 'string' ? { id: b, label: b, icon: '' } : b);
+}
+function getBeltConfigByValue(val){
+  if (!val) return null;
+  const belts = getBeltsConfig();
+  return belts.find(b => b.id === val || b.label === val) || null;
+}
+
 /* profile */
 function renderProfile(){
   const avatarEl = $('#profileAvatar');
@@ -310,6 +322,15 @@ function renderProfile(){
   const progressHint = $('#profileProgressHint');
   const bookmarksCount = $('#profileBookmarksCount');
   const achievementsEl = $('#profileAchievements');
+  const badgesEl = $('#profileBadges');
+  const beltDisplayEl = $('#profileBeltDisplay');
+  const beltFormEl = $('#profileBeltForm');
+  const beltIconEl = $('#profileBeltIcon');
+  const beltLabelEl = $('#profileBeltLabel');
+  const divisionBadgeEl = $('#profileDivisionBadge');
+  const beltPickerEl = $('#profileBeltPicker');
+  const divisionPickerEl = $('#profileDivisionPicker');
+
   if (!avatarEl || !nameEl) return;
 
   const user = getTelegramUser();
@@ -327,64 +348,179 @@ function renderProfile(){
   const watched = STATE.watched.length;
   const total = STATE.courses.length;
   const pct = total > 0 ? Math.round((watched / total) * 100) : 0;
-  progressText.textContent = watched + ' из ' + total + ' курсов';
-  progressFill.style.width = pct + '%';
-  progressHint.textContent = 'Вы просмотрели ' + watched + ' курсов из ' + total + ' в каталоге';
+  if (progressText) progressText.textContent = watched + ' из ' + total;
+  if (progressFill) progressFill.style.width = pct + '%';
+  if (progressHint) progressHint.textContent = 'Вы просмотрели ' + watched + ' курсов из ' + total + ' в каталоге';
+  if (bookmarksCount) bookmarksCount.textContent = STATE.bookmarks.length;
 
-  bookmarksCount.textContent = STATE.bookmarks.length;
-
+  /* achievements */
   const achievementsList = (typeof PROFILE_CONFIG !== 'undefined' && PROFILE_CONFIG.achievements) ? PROFILE_CONFIG.achievements : [];
   const unlocked = achievementsList
     .filter(a => watched >= (a.minWatched || 0))
     .sort((a, b) => (a.minWatched || 0) - (b.minWatched || 0));
-  achievementsEl.innerHTML = '';
-  unlocked.forEach(a => {
-    const b = document.createElement('span');
-    b.className = 'profile-achievement';
-    b.innerHTML = '<i class="fa-solid ' + (a.icon || 'fa-star') + '"></i> ' + escapeHtml(a.label || '');
-    achievementsEl.appendChild(b);
-  });
-
-  if (typeof PROFILE_CONFIG === 'undefined') return;
-  const beltEl = $('#profileBelt');
-  const divisionEl = $('#profileDivision');
-  if (!beltEl || !divisionEl) return;
-
-  beltEl.innerHTML = '';
-  const beltOpt0 = document.createElement('option');
-  beltOpt0.value = '';
-  beltOpt0.textContent = '—';
-  beltEl.appendChild(beltOpt0);
-  (PROFILE_CONFIG.beltColors || []).forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c;
-    opt.textContent = c;
-    beltEl.appendChild(opt);
-  });
-  beltEl.value = STATE.profile.belt || '';
-
-  divisionEl.innerHTML = '';
-  (PROFILE_CONFIG.divisions || []).forEach(d => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'profile-division-btn' + (STATE.profile.division === d.id ? ' active' : '');
-    btn.dataset.division = d.id;
-    btn.textContent = d.label;
-    divisionEl.appendChild(btn);
-  });
-
-  if (!beltEl.dataset.bound) {
-    beltEl.dataset.bound = '1';
-    beltEl.addEventListener('change', () => {
-      STATE.profile.belt = beltEl.value;
-      saveJSON(KEY_PROFILE, STATE.profile);
+  if (achievementsEl) {
+    achievementsEl.innerHTML = '';
+    unlocked.forEach(a => {
+      const b = document.createElement('span');
+      b.className = 'profile-achievement';
+      b.innerHTML = '<i class="fa-solid ' + (a.icon || 'fa-star') + '"></i> ' + escapeHtml(a.label || '');
+      achievementsEl.appendChild(b);
     });
-    divisionEl.addEventListener('click', (e) => {
+  }
+
+  /* belt & division */
+  const hasBeltAndDivision = !!(STATE.profile.belt && STATE.profile.division);
+  const divisions = (typeof PROFILE_CONFIG !== 'undefined' && PROFILE_CONFIG.divisions) ? PROFILE_CONFIG.divisions : [];
+
+  /* badges in hero (when selected) */
+  if (badgesEl) {
+    badgesEl.innerHTML = '';
+    if (hasBeltAndDivision) {
+      const beltCfg = getBeltConfigByValue(STATE.profile.belt);
+      const divCfg = divisions.find(d => d.id === STATE.profile.division);
+      if (beltCfg) {
+        const beltBadge = document.createElement('span');
+        beltBadge.className = 'profile-hero-badge profile-hero-badge--belt';
+        if (beltCfg.icon) {
+          const img = document.createElement('img');
+          img.src = beltCfg.icon;
+          img.alt = beltCfg.label;
+          img.className = 'profile-hero-badge-icon';
+          img.onerror = () => { img.style.display = 'none'; };
+          beltBadge.appendChild(img);
+        }
+        const span = document.createElement('span');
+        span.textContent = beltCfg.label;
+        beltBadge.appendChild(span);
+        badgesEl.appendChild(beltBadge);
+      }
+      if (divCfg) {
+        const divBadge = document.createElement('span');
+        divBadge.className = 'profile-hero-badge';
+        divBadge.textContent = divCfg.label;
+        badgesEl.appendChild(divBadge);
+      }
+    }
+  }
+
+  /* belt section: display vs form */
+  const showBeltForm = !hasBeltAndDivision || profileEditMode;
+  if (beltDisplayEl && beltFormEl) {
+    if (hasBeltAndDivision && !profileEditMode) {
+      beltDisplayEl.style.display = 'block';
+      beltFormEl.style.display = 'none';
+      const beltCfg = getBeltConfigByValue(STATE.profile.belt);
+      const divCfg = divisions.find(d => d.id === STATE.profile.division);
+      if (beltIconEl) {
+        if (beltCfg && beltCfg.icon) {
+          beltIconEl.src = beltCfg.icon;
+          beltIconEl.alt = beltCfg.label;
+          beltIconEl.style.display = '';
+          beltIconEl.onerror = () => { beltIconEl.style.display = 'none'; };
+        } else {
+          beltIconEl.style.display = 'none';
+        }
+      }
+      if (beltLabelEl) beltLabelEl.textContent = beltCfg ? beltCfg.label : STATE.profile.belt;
+      if (divisionBadgeEl) divisionBadgeEl.textContent = divCfg ? divCfg.label : STATE.profile.division;
+    } else {
+      beltDisplayEl.style.display = 'none';
+      beltFormEl.style.display = 'block';
+
+      /* belt picker */
+      if (beltPickerEl) {
+        beltPickerEl.innerHTML = '';
+        const belts = getBeltsConfig();
+        belts.forEach(b => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'profile-belt-option' + (STATE.profile.belt === b.id || STATE.profile.belt === b.label ? ' active' : '');
+          btn.dataset.beltId = b.id;
+          btn.dataset.beltLabel = b.label;
+          if (b.icon) {
+            const img = document.createElement('img');
+            img.src = b.icon;
+            img.alt = b.label;
+            img.className = 'profile-belt-option-icon';
+            img.onerror = () => { img.style.display = 'none'; };
+            btn.appendChild(img);
+          }
+          const span = document.createElement('span');
+          span.className = 'profile-belt-option-label';
+          span.textContent = b.label;
+          btn.appendChild(span);
+          beltPickerEl.appendChild(btn);
+        });
+      }
+
+      /* division picker */
+      if (divisionPickerEl) {
+        divisionPickerEl.innerHTML = '';
+        divisions.forEach(d => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'profile-division-btn' + (STATE.profile.division === d.id ? ' active' : '');
+          btn.dataset.division = d.id;
+          btn.textContent = d.label;
+          divisionPickerEl.appendChild(btn);
+        });
+      }
+    }
+  }
+
+  /* show/hide cancel button (only in edit mode) */
+  const cancelBtn = $('#profileCancelBeltBtn');
+  if (cancelBtn) cancelBtn.style.display = profileEditMode ? 'inline-block' : 'none';
+
+  /* bind events (once) */
+  const editBtn = $('#profileEditBeltBtn');
+  const saveBtn = $('#profileSaveBeltBtn');
+  if (editBtn && !editBtn.dataset.bound) {
+    editBtn.dataset.bound = '1';
+    editBtn.addEventListener('click', () => {
+      profileEditMode = true;
+      renderProfile();
+    });
+  }
+  if (cancelBtn && !cancelBtn.dataset.bound) {
+    cancelBtn.dataset.bound = '1';
+    cancelBtn.addEventListener('click', () => {
+      profileEditMode = false;
+      renderProfile();
+    });
+  }
+  if (saveBtn && !saveBtn.dataset.bound) {
+    saveBtn.dataset.bound = '1';
+    saveBtn.addEventListener('click', () => {
+      const selBelt = beltPickerEl && beltPickerEl.querySelector('.profile-belt-option.active');
+      const selDiv = divisionPickerEl && divisionPickerEl.querySelector('.profile-division-btn.active');
+      if (!selBelt || !selDiv) {
+        showToast('Выберите пояс и раздел');
+        return;
+      }
+      STATE.profile.belt = selBelt.dataset.beltId;
+      STATE.profile.division = selDiv.dataset.division;
+      saveJSON(KEY_PROFILE, STATE.profile);
+      profileEditMode = false;
+      showToast('Сохранено');
+      renderProfile();
+    });
+  }
+  if (beltPickerEl && !beltPickerEl.dataset.bound) {
+    beltPickerEl.dataset.bound = '1';
+    beltPickerEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.profile-belt-option');
+      if (!btn) return;
+      beltPickerEl.querySelectorAll('.profile-belt-option').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  }
+  if (divisionPickerEl && !divisionPickerEl.dataset.bound) {
+    divisionPickerEl.dataset.bound = '1';
+    divisionPickerEl.addEventListener('click', (e) => {
       const btn = e.target.closest('.profile-division-btn');
       if (!btn) return;
-      STATE.profile.division = btn.dataset.division;
-      saveJSON(KEY_PROFILE, STATE.profile);
-      divisionEl.querySelectorAll('.profile-division-btn').forEach(b => b.classList.remove('active'));
+      divisionPickerEl.querySelectorAll('.profile-division-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     });
   }

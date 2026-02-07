@@ -101,35 +101,58 @@
     </section>
 
     <section id="page-profile" class="page">
-      <div class="profile-card">
-        <div class="profile-header">
+      <div class="profile-page">
+        <!-- Hero -->
+        <div class="profile-hero">
           <div id="profileAvatar" class="profile-avatar"></div>
-          <div id="profileName" class="profile-name">Загрузка...</div>
+          <h1 id="profileName" class="profile-name">Загрузка...</h1>
+          <div id="profileBadges" class="profile-badges"></div>
         </div>
-        <div class="profile-progress-wrap">
-          <div class="profile-progress-label">
-            <span id="profileProgressText">0 из 0 курсов</span>
+
+        <!-- Stats cards -->
+        <div class="profile-stats-grid">
+          <div class="profile-stat-card">
+            <div class="profile-stat-value" id="profileProgressText">0 из 0</div>
+            <div class="profile-stat-label">Курсов просмотрено</div>
+            <div class="profile-progress-bar profile-progress-bar--compact">
+              <div id="profileProgressFill" class="profile-progress-fill" style="width:0%"></div>
+            </div>
           </div>
-          <div class="profile-progress-bar">
-            <div id="profileProgressFill" class="profile-progress-fill" style="width:0%"></div>
+          <div class="profile-stat-card">
+            <div class="profile-stat-value" id="profileBookmarksCount">0</div>
+            <div class="profile-stat-label">В закладках</div>
           </div>
-          <div class="profile-progress-hint" id="profileProgressHint">Вы просмотрели 0 курсов из 0 в каталоге</div>
         </div>
-        <div class="profile-stats">
-          <div class="profile-stat">
-            <i class="fa-solid fa-star"></i>
-            <span id="profileBookmarksCount">0</span> в закладках
-          </div>
+        <p class="profile-progress-hint" id="profileProgressHint">Вы просмотрели 0 курсов из 0 в каталоге</p>
+
+        <!-- Achievements -->
+        <div class="profile-section">
+          <h2 class="profile-section-title">Достижения</h2>
           <div id="profileAchievements" class="profile-achievements"></div>
         </div>
-        <div class="profile-fields">
-          <div class="profile-field">
-            <label for="profileBelt">Пояс</label>
-            <select id="profileBelt"></select>
+
+        <!-- Belt & Division: form or display -->
+        <div class="profile-section profile-belt-section">
+          <div id="profileBeltDisplay" class="profile-belt-display" style="display:none">
+            <div class="profile-belt-card">
+              <img id="profileBeltIcon" class="profile-belt-icon" src="" alt="">
+              <div class="profile-belt-info">
+                <span id="profileBeltLabel" class="profile-belt-label"></span>
+                <span id="profileDivisionBadge" class="profile-division-badge"></span>
+              </div>
+            </div>
+            <button type="button" id="profileEditBeltBtn" class="profile-edit-btn">Изменить</button>
           </div>
-          <div class="profile-field">
-            <span class="profile-field-label">Раздел</span>
-            <div id="profileDivision" class="profile-division-btns"></div>
+          <div id="profileBeltForm" class="profile-belt-form">
+            <h3 class="profile-form-title">Выберите пояс и раздел</h3>
+            <label class="profile-form-label">Пояс</label>
+            <div id="profileBeltPicker" class="profile-belt-picker"></div>
+            <label class="profile-form-label">Раздел</label>
+            <div id="profileDivisionPicker" class="profile-division-picker"></div>
+            <div class="profile-form-actions">
+              <button type="button" id="profileCancelBeltBtn" class="profile-cancel-btn" style="display:none">Отмена</button>
+              <button type="button" id="profileSaveBeltBtn" class="profile-save-btn">Сохранить</button>
+            </div>
           </div>
         </div>
       </div>
