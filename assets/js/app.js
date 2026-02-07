@@ -425,13 +425,36 @@ function renderProfile(){
     }
   }
 
-  /* hero background from selected belt color */
+  /* hero background from selected belt color + firework particles */
   const heroEl = document.querySelector('.profile-hero');
   if (heroEl) {
     const belts = getBeltsConfig();
     const currentBelt = belts.find(b => b.id === STATE.profile.belt || b.label === STATE.profile.belt);
     heroEl.style.setProperty('--belt-color', currentBelt && currentBelt.color ? currentBelt.color : '#1e3a5f');
     heroEl.style.setProperty('--belt-color-light', currentBelt && (currentBelt.colorLight || currentBelt.color) ? (currentBelt.colorLight || currentBelt.color) : '#2d5a87');
+
+    const fireworkEl = heroEl.querySelector('.profile-hero-firework');
+    if (fireworkEl) {
+      fireworkEl.innerHTML = '';
+      if (currentBelt && currentBelt.icon) {
+        const count = 24;
+        for (let i = 0; i < count; i++) {
+          const angle = (i / count) * 2 * Math.PI + Math.random() * 0.4;
+          const radius = 50 + Math.random() * 70;
+          const tx = Math.cos(angle) * radius;
+          const ty = Math.sin(angle) * radius;
+          const delay = Math.random() * 0.4;
+          const img = document.createElement('img');
+          img.src = currentBelt.icon;
+          img.alt = '';
+          img.className = 'profile-hero-firework-particle';
+          img.style.setProperty('--tx', tx + 'px');
+          img.style.setProperty('--ty', ty + 'px');
+          img.style.setProperty('--delay', delay + 's');
+          fireworkEl.appendChild(img);
+        }
+      }
+    }
   }
 
   /* belt form: show when editing or when belt+division not set */
