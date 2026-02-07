@@ -387,7 +387,7 @@ function renderProfile(){
     if (hasBeltAndDivision) {
       const belts = getBeltsConfig();
       const idx = belts.findIndex(b => b.id === STATE.profile.belt || b.label === STATE.profile.belt);
-      const beltsToShow = idx >= 0 ? belts.slice(0, idx + 1) : [];
+      const beltsToShow = idx >= 0 ? [belts[idx]] : [];
       beltsToShow.forEach(b => {
         const wrap = document.createElement('span');
         wrap.className = 'profile-belt-icon-wrap';
@@ -423,6 +423,15 @@ function renderProfile(){
         badgesEl.appendChild(clubBadge);
       }
     }
+  }
+
+  /* hero background from selected belt color */
+  const heroEl = document.querySelector('.profile-hero');
+  if (heroEl) {
+    const belts = getBeltsConfig();
+    const currentBelt = belts.find(b => b.id === STATE.profile.belt || b.label === STATE.profile.belt);
+    heroEl.style.setProperty('--belt-color', currentBelt && currentBelt.color ? currentBelt.color : '#1e3a5f');
+    heroEl.style.setProperty('--belt-color-light', currentBelt && (currentBelt.colorLight || currentBelt.color) ? (currentBelt.colorLight || currentBelt.color) : '#2d5a87');
   }
 
   /* belt form: show when editing or when belt+division not set */
