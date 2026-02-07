@@ -316,7 +316,7 @@ body.profile-page-active .container {
   background: linear-gradient(135deg, var(--belt-color) 0%, var(--belt-color-light) 50%, var(--belt-color) 100%);
   margin: 0;
   padding: 28px 20px;
-  border-radius: 0;
+  border-radius: 0 0 var(--radius) var(--radius);
   text-align: center;
   color: #fff;
   transition: background 0.4s ease;
@@ -337,7 +337,7 @@ body.profile-page-active .container {
     var(--belt-color-light) 0%,
     transparent 55%
   );
-  opacity: 0.45;
+  opacity: 0.65;
   animation: profileHeroBlob 14s ease-in-out infinite;
 }
 
@@ -347,7 +347,7 @@ body.profile-page-active .container {
     var(--belt-color) 0%,
     transparent 50%
   );
-  opacity: 0.4;
+  opacity: 0.55;
   animation: profileHeroPulse 10s ease-in-out infinite;
 }
 
