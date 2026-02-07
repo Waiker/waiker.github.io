@@ -280,7 +280,7 @@ body.profile-page-active #catWrap {
 }
 
 body.profile-page-active .container {
-  padding-top: 16px;
+  padding-top: calc(16px + env(safe-area-inset-top) + 24px);
 }
 
 /* ——— Profile ——— */
@@ -296,25 +296,64 @@ body.profile-page-active .container {
   padding-bottom: 24px;
 }
 
-/* Hero: background uses --belt-color, --belt-color-light (set from JS) */
-@keyframes profileHeroGradient {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+/* Hero: base gradient + animated pseudo-elements (--belt-color, --belt-color-light set from JS) */
+@keyframes profileHeroBlob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(8%, -5%) scale(1.05); }
+  66% { transform: translate(-5%, 8%) scale(0.98); }
+}
+
+@keyframes profileHeroPulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.6; }
 }
 
 .profile-hero {
   position: relative;
+  overflow: hidden;
   --belt-color: #1e3a5f;
   --belt-color-light: #2d5a87;
   background: linear-gradient(135deg, var(--belt-color) 0%, var(--belt-color-light) 50%, var(--belt-color) 100%);
-  background-size: 200% 200%;
   margin: -16px -16px 0;
   padding: 28px 20px;
   border-radius: 0 0 var(--radius) var(--radius);
   text-align: center;
   color: #fff;
   transition: background 0.4s ease;
-  animation: profileHeroGradient 12s ease-in-out infinite;
+}
+
+.profile-hero::before,
+.profile-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.profile-hero::before {
+  background: radial-gradient(
+    circle at 30% 40%,
+    var(--belt-color-light) 0%,
+    transparent 55%
+  );
+  opacity: 0.45;
+  animation: profileHeroBlob 14s ease-in-out infinite;
+}
+
+.profile-hero::after {
+  background: radial-gradient(
+    circle at 70% 60%,
+    var(--belt-color) 0%,
+    transparent 50%
+  );
+  opacity: 0.4;
+  animation: profileHeroPulse 10s ease-in-out infinite;
+}
+
+.profile-hero > * {
+  position: relative;
+  z-index: 1;
 }
 
 .profile-edit-icon-btn--hero {
