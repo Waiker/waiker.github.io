@@ -296,131 +296,59 @@ body.profile-page-active .container {
   padding-bottom: 24px;
 }
 
-/* Hero: base gradient + animated pseudo-elements (--belt-color, --belt-color-light set from JS) */
-@keyframes profileHeroBlob {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(8%, -5%) scale(1.05); }
-  66% { transform: translate(-5%, 8%) scale(0.98); }
-}
-
-@keyframes profileHeroPulse {
-  0%, 100% { opacity: 0.35; }
-  50% { opacity: 0.6; }
-}
-
+/* Hero: светлый фон как у остальных блоков */
 .profile-hero {
   position: relative;
-  overflow: hidden;
-  --belt-color: #1e3a5f;
-  --belt-color-light: #2d5a87;
-  background: linear-gradient(135deg, var(--belt-color) 0%, var(--belt-color-light) 50%, var(--belt-color) 100%);
+  background: var(--card);
   margin: 0;
   padding: 28px 20px;
   border-radius: 0 0 var(--radius) var(--radius);
   text-align: center;
-  color: #fff;
-  transition: background 0.4s ease;
-}
-
-.profile-hero::before,
-.profile-hero::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.profile-hero::before {
-  background: radial-gradient(
-    circle at 30% 40%,
-    var(--belt-color-light) 0%,
-    transparent 55%
-  );
-  opacity: 0.65;
-  animation: profileHeroBlob 14s ease-in-out infinite;
-}
-
-.profile-hero::after {
-  background: radial-gradient(
-    circle at 70% 60%,
-    var(--belt-color) 0%,
-    transparent 50%
-  );
-  opacity: 0.55;
-  animation: profileHeroPulse 10s ease-in-out infinite;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .profile-hero > * {
   position: relative;
-  z-index: 1;
 }
 
-/* Firework: belt icon particles behind avatar */
+/* Фейерверк отключён при светлом фоне */
 .profile-hero-firework {
-  position: absolute;
-  inset: 0;
-  z-index: 0.5;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-@keyframes profileHeroFirework {
-  0% {
-    transform: translate(0, 0) scale(0.4);
-    opacity: 0.85;
-  }
-  100% {
-    transform: translate(var(--tx), var(--ty)) scale(1);
-    opacity: 0.2;
-  }
-}
-
-.profile-hero-firework-particle {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 24px;
-  height: 24px;
-  margin-left: -12px;
-  margin-top: -12px;
-  object-fit: contain;
-  animation: profileHeroFirework 2.2s ease-out forwards;
-  animation-delay: var(--delay, 0s);
+  display: none;
 }
 
 .profile-edit-icon-btn--hero {
   position: absolute;
   top: 16px;
   right: 16px;
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.4);
-  color: #fff;
+  background: var(--card);
+  border: 1px solid #e2e8f0;
+  color: var(--muted);
 }
 
 .profile-edit-icon-btn--hero:hover,
 .profile-edit-icon-btn--hero:active {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.6);
-  color: #fff;
+  background: var(--chip-bg);
+  border-color: #cbd5e1;
+  color: #334155;
 }
 
 .profile-hero .profile-avatar {
   width: 88px;
   height: 88px;
   margin: 0 auto 12px;
-  border: 3px solid rgba(255, 255, 255, 0.4);
+  border: 3px solid #e2e8f0;
 }
 
 .profile-hero .profile-avatar i {
   font-size: 36px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--muted);
 }
 
 .profile-hero .profile-name {
   font-size: 1.35rem;
   font-weight: 700;
-  color: #fff;
+  color: #111;
   margin: 0 0 12px;
 }
 
@@ -437,7 +365,8 @@ body.profile-page-active .container {
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--chip-bg);
+  color: #334155;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 600;
