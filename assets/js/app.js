@@ -5,6 +5,10 @@ const API_URL = 'https://cp.wtfbjj.ru/api/public.php?token=603B591160C537C6D9629
 const KEY_BOOKMARKS = 'bookmarkedCourses';
 const KEY_WATCHED = 'watchedCourses';
 const KEY_BM_META = 'bookmarksMetaCourses';
+const KEY_PROFILE = 'userProfile';
+
+const MARK_COOLDOWN_MS = 2500;
+let lastMarkAt = 0;
 
 let STATE = {
   courses: [],
@@ -13,7 +17,8 @@ let STATE = {
   query: '',
   bookmarks: loadJSON(KEY_BOOKMARKS, []),
   watched: loadJSON(KEY_WATCHED, []),
-  bmMeta: loadJSON(KEY_BM_META, {}) // url -> {addedAt,name}
+  bmMeta: loadJSON(KEY_BM_META, {}),
+  profile: loadJSON(KEY_PROFILE, { belt: '', division: '', status: '' })
 };
 
 /* helpers */
@@ -228,9 +233,16 @@ function filterCourses(){
 
 /* bookmarks */
 function toggleBookmark(course){
+  const now = Date.now();
+  if (now - lastMarkAt < MARK_COOLDOWN_MS) {
+    const sec = Math.ceil((MARK_COOLDOWN_MS - (now - lastMarkAt)) / 1000);
+    showToast('Подождите ' + sec + ' сек');
+    return;
+  }
   const i = STATE.bookmarks.indexOf(course.url);
   if(i>=0){ STATE.bookmarks.splice(i,1); delete STATE.bmMeta[course.url]; saveJSON(KEY_BOOKMARKS, STATE.bookmarks); saveJSON(KEY_BM_META, STATE.bmMeta); showToast('Удалено из закладок'); }
   else { STATE.bookmarks.push(course.url); STATE.bmMeta[course.url] = { addedAt: Date.now(), name: course.name }; saveJSON(KEY_BOOKMARKS, STATE.bookmarks); saveJSON(KEY_BM_META, STATE.bmMeta); showToast('Добавлено в закладки'); }
+  lastMarkAt = Date.now();
   renderCatalog(); renderBookmarks(); renderProfile();
 }
 function renderBookmarks(){
@@ -259,9 +271,16 @@ function renderBookmarks(){
 
 /* watched */
 function toggleWatched(course){
+  const now = Date.now();
+  if (now - lastMarkAt < MARK_COOLDOWN_MS) {
+    const sec = Math.ceil((MARK_COOLDOWN_MS - (now - lastMarkAt)) / 1000);
+    showToast('Подождите ' + sec + ' сек');
+    return;
+  }
   const i = STATE.watched.indexOf(course.url);
   if(i>=0){ STATE.watched.splice(i,1); saveJSON(KEY_WATCHED, STATE.watched); showToast('Отмечено как непросмотренное'); }
   else { STATE.watched.push(course.url); saveJSON(KEY_WATCHED, STATE.watched); showToast('Отмечено как просмотрено'); }
+  lastMarkAt = Date.now();
   renderCatalog(); renderWatched();
 }
 function renderWatched(){
@@ -314,17 +333,61 @@ function renderProfile(){
 
   bookmarksCount.textContent = STATE.bookmarks.length;
 
-  const achievements = [];
-  if (watched >= 1) achievements.push({ label: 'Первый шаг', icon: 'fa-seedling' });
-  if (watched >= 5) achievements.push({ label: 'Активный ученик', icon: 'fa-graduation-cap' });
-  if (watched >= 10) achievements.push({ label: 'Мастер', icon: 'fa-trophy' });
+  const achievementsList = (typeof PROFILE_CONFIG !== 'undefined' && PROFILE_CONFIG.achievements) ? PROFILE_CONFIG.achievements : [];
+  const unlocked = achievementsList
+    .filter(a => watched >= (a.minWatched || 0))
+    .sort((a, b) => (a.minWatched || 0) - (b.minWatched || 0));
   achievementsEl.innerHTML = '';
-  achievements.forEach(a => {
+  unlocked.forEach(a => {
     const b = document.createElement('span');
     b.className = 'profile-achievement';
-    b.innerHTML = '<i class="fa-solid ' + a.icon + '"></i> ' + escapeHtml(a.label);
+    b.innerHTML = '<i class="fa-solid ' + (a.icon || 'fa-star') + '"></i> ' + escapeHtml(a.label || '');
     achievementsEl.appendChild(b);
   });
+
+  if (typeof PROFILE_CONFIG === 'undefined') return;
+  const beltEl = $('#profileBelt');
+  const divisionEl = $('#profileDivision');
+  if (!beltEl || !divisionEl) return;
+
+  beltEl.innerHTML = '';
+  const beltOpt0 = document.createElement('option');
+  beltOpt0.value = '';
+  beltOpt0.textContent = '—';
+  beltEl.appendChild(beltOpt0);
+  (PROFILE_CONFIG.beltColors || []).forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = c;
+    beltEl.appendChild(opt);
+  });
+  beltEl.value = STATE.profile.belt || '';
+
+  divisionEl.innerHTML = '';
+  (PROFILE_CONFIG.divisions || []).forEach(d => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'profile-division-btn' + (STATE.profile.division === d.id ? ' active' : '');
+    btn.dataset.division = d.id;
+    btn.textContent = d.label;
+    divisionEl.appendChild(btn);
+  });
+
+  if (!beltEl.dataset.bound) {
+    beltEl.dataset.bound = '1';
+    beltEl.addEventListener('change', () => {
+      STATE.profile.belt = beltEl.value;
+      saveJSON(KEY_PROFILE, STATE.profile);
+    });
+    divisionEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.profile-division-btn');
+      if (!btn) return;
+      STATE.profile.division = btn.dataset.division;
+      saveJSON(KEY_PROFILE, STATE.profile);
+      divisionEl.querySelectorAll('.profile-division-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  }
 }
 
 /* categories render (search field for categories is now part of main search) */
