@@ -92,16 +92,30 @@ function loadMockData(){
 }
 
 async function userInit(){
+  // #region agent log
+  const _authUrl = USER_API_BASE + '/auth.php';
+  fetch('http://127.0.0.1:7242/ingest/4162b94a-fd1c-4a8f-ad75-a9068f963cec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:userInit',message:'userInit called',data:{USER_API_BASE, authUrl: _authUrl, hasTelegram: !!window.Telegram, hasWebApp: !!window.Telegram?.WebApp},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
   const initData = getInitData();
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/4162b94a-fd1c-4a8f-ad75-a9068f963cec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:userInit',message:'initData check',data:{initDataLength: (initData && initData.length) || 0, willSkip: !initData},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
   if (!initData) return;
   try {
-    const res = await fetch(USER_API_BASE + '/auth.php', {
+    const res = await fetch(_authUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ initData: initData })
     });
+    // #region agent log
+    const _resText = await res.text();
+    fetch('http://127.0.0.1:7242/ingest/4162b94a-fd1c-4a8f-ad75-a9068f963cec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:userInit',message:'auth response',data:{status: res.status, ok: res.ok, bodyLength: _resText.length, bodyPreview: _resText.slice(0, 200)},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     if (!res.ok) return;
-    const data = await res.json();
+    const data = (function(){ try { return JSON.parse(_resText); } catch(e) { return null; } })();
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/4162b94a-fd1c-4a8f-ad75-a9068f963cec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:userInit',message:'parsed response',data:{hasUser: !!(data && data.user), hasError: !!(data && data.error), errorMsg: data && data.error},timestamp:Date.now(),hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
     if (data.user && data.user.bio) {
       STATE.profile.belt = data.user.bio.belt || '';
       STATE.profile.division = data.user.bio.division || '';
@@ -109,7 +123,12 @@ async function userInit(){
     }
     if (Array.isArray(data.watched_course_ids)) STATE.watched = data.watched_course_ids;
     if (data.progress) STATE.userProgress = data.progress;
-  } catch (e) { console.warn('userInit failed', e); }
+  } catch (e) {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/4162b94a-fd1c-4a8f-ad75-a9068f963cec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:userInit',message:'userInit catch',data:{errName: e && e.name, errMessage: e && e.message},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
+    console.warn('userInit failed', e);
+  }
 }
 
 /* ---------- Autocomplete index & suggestions (search) ---------- */
