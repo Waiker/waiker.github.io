@@ -115,7 +115,12 @@
 
         <!-- Рейтинг (светлый золотой, выше остальных плашек) -->
         <div class="profile-rating-card">
-          <div class="profile-rating-title">Текущий рейтинг</div>
+          <div class="profile-block-header">
+            <span class="profile-rating-title">Текущий рейтинг</span>
+            <button type="button" class="profile-hint-btn" data-hint="rating" title="Подсказка" aria-label="Что такое рейтинг">
+              <i class="fa-solid fa-circle-question"></i>
+            </button>
+          </div>
           <div class="profile-rating-bar-wrap">
             <div class="profile-rating-bar">
               <div class="profile-rating-fill" id="profileRatingFill" style="width:0%"></div>
@@ -127,13 +132,32 @@
         <!-- Небольшие плашки: просмотрено + уровень -->
         <div class="profile-stats-compact">
           <div class="profile-mini-card profile-mini-card--watched">
-            <span class="profile-mini-label">Курсов просмотрено</span>
+            <div class="profile-block-header">
+              <span class="profile-mini-label">Курсов просмотрено</span>
+              <button type="button" class="profile-hint-btn" data-hint="watched" title="Подсказка" aria-label="Что такое курсов просмотрено">
+                <i class="fa-solid fa-circle-question"></i>
+              </button>
+            </div>
             <div class="profile-mini-bar">
               <div id="profileProgressFill" class="profile-mini-fill" style="width:0%"></div>
             </div>
           </div>
           <div id="profileLevelBlock" class="profile-mini-card profile-mini-card--level" style="display:none">
-            <span class="profile-mini-level" id="profileLevelText">Уровень 1</span>
+            <div class="profile-block-header profile-block-header--level">
+              <span class="profile-mini-level" id="profileLevelText">Уровень 1</span>
+              <button type="button" class="profile-hint-btn" data-hint="level" title="Подсказка" aria-label="Что такое уровень">
+                <i class="fa-solid fa-circle-question"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Подложка и попап подсказки (общий для всех блоков) -->
+        <div id="profileHintBackdrop" class="profile-hint-backdrop" aria-hidden="true"></div>
+        <div id="profileHintPopover" class="profile-hint-popover" role="dialog" aria-hidden="true">
+          <div class="profile-hint-popover-inner">
+            <p id="profileHintText" class="profile-hint-text"></p>
+            <button type="button" class="profile-hint-close" aria-label="Закрыть"><i class="fa-solid fa-times"></i></button>
           </div>
         </div>
 

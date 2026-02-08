@@ -678,6 +678,45 @@ function renderProfile(){
       btn.classList.add('active');
     });
   }
+
+  /* подсказки (?) для рейтинга, просмотров, уровня */
+  const hintTexts = {
+    rating: '🏆 Рейтинг — показатель вашего статуса среди пользователей, который растёт за активность и поддержку проекта.',
+    watched: '📚 Курсов просмотрено — количество курсов, которые вы полностью отметили как просмотренные.',
+    level: '⭐ Уровень — отражает ваш общий прогресс и растёт за счёт просмотренных курсов.'
+  };
+  const popover = $('#profileHintPopover');
+  const backdrop = $('#profileHintBackdrop');
+  const hintTextEl = $('#profileHintText');
+  const closeHint = () => {
+    if (popover) { popover.classList.remove('is-visible'); popover.setAttribute('aria-hidden', 'true'); }
+    if (backdrop) { backdrop.classList.remove('is-visible'); backdrop.setAttribute('aria-hidden', 'true'); }
+  };
+  $all('.profile-hint-btn').forEach(btn => {
+    if (btn.dataset.hintBound) return;
+    btn.dataset.hintBound = '1';
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.hint;
+      if (hintTextEl && key && hintTexts[key]) {
+        hintTextEl.textContent = hintTexts[key];
+        if (backdrop) { backdrop.classList.add('is-visible'); backdrop.setAttribute('aria-hidden', 'false'); }
+        if (popover) { popover.classList.add('is-visible'); popover.setAttribute('aria-hidden', 'false'); }
+      }
+    });
+  });
+  const hintCloseBtn = popover && popover.querySelector('.profile-hint-close');
+  if (hintCloseBtn && !hintCloseBtn.dataset.bound) {
+    hintCloseBtn.dataset.bound = '1';
+    hintCloseBtn.addEventListener('click', closeHint);
+  }
+  if (backdrop && !backdrop.dataset.bound) {
+    backdrop.dataset.bound = '1';
+    backdrop.addEventListener('click', closeHint);
+  }
+  if (popover && !popover.dataset.bound) {
+    popover.dataset.bound = '1';
+    popover.addEventListener('click', (e) => { if (e.target === popover) closeHint(); });
+  }
 }
 
 /* categories render (search field for categories is now part of main search) */
