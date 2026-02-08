@@ -450,8 +450,8 @@ function renderLeaderboard(){
       rowEl.innerHTML =
         `<span class="leaderboard-rank">${row.rank}</span>` +
         `<span class="leaderboard-username">${escapeHtml(row.username)}</span>` +
-        `<span class="leaderboard-level">${row.level}</span>` +
         `<span class="leaderboard-rating">${row.rating}</span>` +
+        `<span class="leaderboard-level">${row.level}</span>` +
         `<span class="leaderboard-belt">${beltImg}</span>`;
       listEl.appendChild(rowEl);
     });
@@ -459,10 +459,10 @@ function renderLeaderboard(){
 
   if (meBlockEl) {
     if (me && me.rank != null && !me.in_top) {
-      meBlockEl.textContent = 'Ваше место в общем рейтинге: ' + me.rank;
+      meBlockEl.textContent = 'Ваша позиция в общем рейтинге: ' + me.rank;
       meBlockEl.style.display = 'block';
     } else if (me && me.rank != null && me.in_top) {
-      meBlockEl.textContent = 'Ваше место: ' + me.rank;
+      meBlockEl.textContent = 'Ваша позиция: ' + me.rank;
       meBlockEl.style.display = 'block';
     } else {
       meBlockEl.style.display = 'none';
@@ -852,9 +852,11 @@ $all('.nav-item').forEach(n=>{
     document.getElementById(target).classList.add('active');
     if (target === 'page-profile') {
       document.body.classList.add('profile-page-active');
+      document.body.classList.remove('leaderboard-page-active');
       renderProfile();
     } else if (target === 'page-leaderboard') {
       document.body.classList.remove('profile-page-active');
+      document.body.classList.add('leaderboard-page-active');
       if (!STATE.leaderboard) {
         renderLeaderboard();
         await fetchLeaderboard();
@@ -862,6 +864,7 @@ $all('.nav-item').forEach(n=>{
       renderLeaderboard();
     } else {
       document.body.classList.remove('profile-page-active');
+      document.body.classList.remove('leaderboard-page-active');
     }
     window.scrollTo(0,0);
   });

@@ -1018,6 +1018,13 @@ body.profile-page-active .container {
   color: var(--muted);
 }
 
+/* ——— Leaderboard page: hide search and banners ——— */
+body.leaderboard-page-active .topbar,
+body.leaderboard-page-active .banner-wrap,
+body.leaderboard-page-active #catWrap {
+  display: none !important;
+}
+
 /* ——— Leaderboard ——— */
 .leaderboard-me-block {
   margin-bottom: 12px;
@@ -1034,9 +1041,18 @@ body.profile-page-active .container {
   gap: 4px;
 }
 
+/* Header and row: #, Ник, Рейтинг, Уровень, Пояс */
+.leaderboard-header.leaderboard-row {
+  background: var(--bg);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
 .leaderboard-row {
   display: grid;
-  grid-template-columns: 36px 1fr 48px 64px 40px;
+  grid-template-columns: 36px 1fr 64px 48px 40px;
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
@@ -1063,8 +1079,17 @@ body.profile-page-active .container {
   white-space: nowrap;
 }
 
-.leaderboard-level,
 .leaderboard-rating {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.leaderboard-row:not(.leaderboard-header) .leaderboard-rating {
+  color: #c9a227;
+  font-weight: 600;
+}
+
+.leaderboard-level {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
