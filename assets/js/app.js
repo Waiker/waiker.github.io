@@ -1,5 +1,6 @@
 /* CONFIG */
 const API_URL = 'https://cp.wtfbjj.ru/api/public.php?token=603B591160C537C6D962926C3A9AB2DF';
+const USER_API_BASE = 'https://dev.wtfbjj.ru/api';
 
 /* STATE + localStorage keys */
 const KEY_BOOKMARKS = 'bookmarkedCourses';
@@ -28,7 +29,8 @@ let STATE = {
   bookmarks: loadJSON(KEY_BOOKMARKS, []),
   watched: loadJSON(KEY_WATCHED, []),
   bmMeta: loadJSON(KEY_BM_META, {}),
-  profile: loadJSON(KEY_PROFILE, { belt: '', division: '', club: '', status: '' })
+  profile: loadJSON(KEY_PROFILE, { belt: '', division: '', club: '', status: '' }),
+  userProgress: null
 };
 
 /* helpers */
@@ -41,6 +43,7 @@ function getTelegramUser(){
     return { photoUrl: user.photo_url || null, displayName: name || 'Гость' };
   } catch (e) { return { photoUrl: null, displayName: 'Гость' }; }
 }
+function getInitData(){ return (window.Telegram?.WebApp?.initData || ''); }
 function $all(sel){ return Array.from(document.querySelectorAll(sel)) }
 function loadJSON(k,d){ try{ const t=localStorage.getItem(k); return t?JSON.parse(t):d; }catch(e){ return d; } }
 function saveJSON(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
@@ -60,8 +63,10 @@ async function loadData(){
       url:c.url || '',
       description:c.description || '',
       category_ids: (c.category_ids || []).map(String),
-      categories: (c.categories || []) // array of names
+      categories: (c.categories || []),
+      xp: (c.xp != null && c.xp !== '') ? parseInt(c.xp, 10) : 100
     }));
+    await userInit();
     renderAll();
   }catch(e){
     console.error('loadData err',e);
@@ -79,10 +84,32 @@ function loadMockData(){
       url:`https://t.me/example/${100+i}`,
       description:`Описание курса ${i}`,
       category_ids:[String(((i-1)%STATE.categories.length)+1)],
-      categories:[STATE.categories[(i-1)%STATE.categories.length].name]
+      categories:[STATE.categories[(i-1)%STATE.categories.length].name],
+      xp: 100
     });
   }
-  renderAll();
+  userInit().then(()=> renderAll());
+}
+
+async function userInit(){
+  const initData = getInitData();
+  if (!initData) return;
+  try {
+    const res = await fetch(USER_API_BASE + '/auth.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: initData })
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.user && data.user.bio) {
+      STATE.profile.belt = data.user.bio.belt || '';
+      STATE.profile.division = data.user.bio.division || '';
+      STATE.profile.club = data.user.bio.club || '';
+    }
+    if (Array.isArray(data.watched_course_ids)) STATE.watched = data.watched_course_ids;
+    if (data.progress) STATE.userProgress = data.progress;
+  } catch (e) { console.warn('userInit failed', e); }
 }
 
 /* ---------- Autocomplete index & suggestions (search) ---------- */
@@ -183,7 +210,9 @@ function renderCatalog(){
     bk.addEventListener('click',(ev)=>{ ev.stopPropagation(); toggleBookmark(c); });
 
     const cbBtn = document.createElement('button'); cbBtn.className='btn-icon';
-    cbBtn.innerHTML = STATE.watched.includes(c.url) ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-regular fa-eye"></i>';
+    const isWatched = STATE.watched.includes(c.id) || STATE.watched.includes(c.url);
+    cbBtn.innerHTML = isWatched ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-regular fa-eye"></i>';
+    if (isWatched) cbBtn.classList.add('bookmarked');
     cbBtn.addEventListener('click',(ev)=>{ ev.stopPropagation(); toggleWatched(c); });
 
     // const delBtn = document.createElement('button'); delBtn.className='btn-icon';
@@ -280,22 +309,54 @@ function renderBookmarks(){
 }
 
 /* watched */
-function toggleWatched(course){
+function isCourseWatched(c){ return STATE.watched.includes(c.id) || STATE.watched.includes(c.url); }
+async function toggleWatched(course){
   const now = Date.now();
   if (now - lastMarkAt < MARK_COOLDOWN_MS) {
     const sec = Math.ceil((MARK_COOLDOWN_MS - (now - lastMarkAt)) / 1000);
     showToast('Подождите ' + sec + ' сек');
     return;
   }
-  const i = STATE.watched.indexOf(course.url);
-  if(i>=0){ STATE.watched.splice(i,1); saveJSON(KEY_WATCHED, STATE.watched); showToast('Отмечено как непросмотренное'); }
-  else { STATE.watched.push(course.url); saveJSON(KEY_WATCHED, STATE.watched); showToast('Отмечено как просмотрено'); }
+  const watched = isCourseWatched(course);
+  if (watched) {
+    const i = STATE.watched.indexOf(course.id) >= 0 ? STATE.watched.indexOf(course.id) : STATE.watched.indexOf(course.url);
+    STATE.watched.splice(i, 1);
+    saveJSON(KEY_WATCHED, STATE.watched);
+    showToast('Отмечено как непросмотренное');
+    lastMarkAt = Date.now();
+    renderCatalog(); renderWatched(); renderProfile();
+    return;
+  }
+  const initData = getInitData();
+  if (initData) {
+    try {
+      const res = await fetch(USER_API_BASE + '/progress.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: initData, course_id: course.id, xp: course.xp != null ? course.xp : 100 })
+      });
+      const data = await res.json();
+      if (res.ok && data.progress) {
+        STATE.watched.push(course.id);
+        STATE.userProgress = data.progress;
+        showToast('Отмечено как просмотрено');
+      } else if (res.status === 409) {
+        STATE.watched.push(course.id);
+        if (data.progress) STATE.userProgress = data.progress;
+        showToast('Уже отмечено как просмотрено');
+      } else { showToast('Ошибка сохранения'); return; }
+    } catch (e) { showToast('Ошибка сети'); return; }
+  } else {
+    STATE.watched.push(course.url);
+    saveJSON(KEY_WATCHED, STATE.watched);
+    showToast('Отмечено как просмотрено');
+  }
   lastMarkAt = Date.now();
-  renderCatalog(); renderWatched();
+  renderCatalog(); renderWatched(); renderProfile();
 }
 function renderWatched(){
   const mount = $('#watchedList'); mount.innerHTML='';
-  const items = STATE.watched.map(url => STATE.courses.find(c=>c.url===url)).filter(Boolean);
+  const items = STATE.watched.map(idOrUrl => STATE.courses.find(c => c.id === idOrUrl || c.url === idOrUrl)).filter(Boolean);
   if(items.length===0){ mount.innerHTML = '<div style="color:#888">Нет просмотренных курсов</div>'; renderProfile(); return; }
   items.forEach(c=>{
     const card = document.createElement('div'); card.className='course-card';
@@ -360,6 +421,16 @@ function renderProfile(){
   if (progressFill) progressFill.style.width = pct + '%';
   if (progressHint) progressHint.textContent = 'Вы просмотрели ' + watched + ' курсов из ' + total + ' в каталоге';
   if (bookmarksCount) bookmarksCount.textContent = STATE.bookmarks.length;
+
+  const levelBlock = $('#profileLevelBlock');
+  const levelText = $('#profileLevelText');
+  const levelFill = $('#profileLevelFill');
+  if (STATE.userProgress && levelBlock && levelText && levelFill) {
+    levelBlock.style.display = 'block';
+    const p = STATE.userProgress;
+    levelText.textContent = 'Уровень ' + p.level + ' • ' + p.xp + ' XP';
+    levelFill.style.width = (p.progress_percent != null ? p.progress_percent : 0) + '%';
+  } else if (levelBlock) levelBlock.style.display = 'none';
 
   /* achievements */
   const achievementsList = (typeof PROFILE_CONFIG !== 'undefined' && PROFILE_CONFIG.achievements) ? PROFILE_CONFIG.achievements : [];
@@ -526,7 +597,7 @@ function renderProfile(){
   }
   if (saveBtn && !saveBtn.dataset.bound) {
     saveBtn.dataset.bound = '1';
-    saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener('click', async () => {
       const selBelt = beltPickerEl && beltPickerEl.querySelector('.profile-belt-option.active');
       const selDiv = divisionPickerEl && divisionPickerEl.querySelector('.profile-division-btn.active');
       if (!selBelt || !selDiv) {
@@ -536,10 +607,28 @@ function renderProfile(){
       STATE.profile.belt = selBelt.dataset.beltId;
       STATE.profile.division = selDiv.dataset.division;
       STATE.profile.club = clubInputEl ? sanitizeClub(clubInputEl.value) : '';
-      saveJSON(KEY_PROFILE, STATE.profile);
-      profileEditMode = false;
-      showToast('Сохранено');
-      renderProfile();
+      const initData = getInitData();
+      if (initData) {
+        try {
+          const res = await fetch(USER_API_BASE + '/profile_update.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              initData: initData,
+              belt: STATE.profile.belt,
+              division: STATE.profile.division,
+              club: STATE.profile.club
+            })
+          });
+          if (res.ok) { profileEditMode = false; showToast('Сохранено'); renderProfile(); return; }
+        } catch (e) {}
+        showToast('Ошибка сохранения');
+      } else {
+        saveJSON(KEY_PROFILE, STATE.profile);
+        profileEditMode = false;
+        showToast('Сохранено');
+        renderProfile();
+      }
     });
   }
   if (beltPickerEl && !beltPickerEl.dataset.bound) {

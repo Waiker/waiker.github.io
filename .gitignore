@@ -1,0 +1,5 @@
+# Cursor IDE
+.cursor/
+
+# Backend API (deploy separately, contains secrets)
+api/
