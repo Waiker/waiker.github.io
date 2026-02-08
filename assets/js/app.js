@@ -640,8 +640,14 @@ function renderProfile(){
             })
           });
           if (res.ok) { profileEditMode = false; showToast('Сохранено'); renderProfile(); return; }
-        } catch (e) {}
-        showToast('Ошибка сохранения');
+          const errText = await res.text();
+          let errMsg = 'Ошибка сохранения';
+          try { const d = JSON.parse(errText); if (d && d.error) errMsg = 'Ошибка: ' + d.error; } catch (_) {}
+          if (errMsg === 'Ошибка сохранения') errMsg = 'Ошибка: ' + res.status + (errText ? ' ' + errText.slice(0, 80) : '');
+          showToast(errMsg);
+        } catch (e) {
+          showToast('Ошибка сети: ' + (e && e.message ? e.message : ''));
+        }
       } else {
         saveJSON(KEY_PROFILE, STATE.profile);
         profileEditMode = false;
