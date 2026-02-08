@@ -1,6 +1,6 @@
 /* CONFIG */
 const API_URL = 'https://cp.wtfbjj.ru/api/public.php?token=603B591160C537C6D962926C3A9AB2DF';
-const USER_API_BASE = 'https://dev.wtfbjj.ru/api';
+const USER_API_BASE = 'https://cp.wtfbjj.ru/miniapp/api';
 
 /* STATE + localStorage keys */
 const KEY_BOOKMARKS = 'bookmarkedCourses';
