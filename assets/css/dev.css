@@ -521,7 +521,7 @@ body.profile-page-active .container {
 }
 
 .profile-mini-bar {
-  height: 5px;
+  height: 10px;
   border-radius: 999px;
   background: #e2e8f0;
   overflow: hidden;
@@ -550,7 +550,7 @@ body.profile-page-active .container {
 .profile-hint-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 99;
+  z-index: 1300;
   background: rgba(0, 0, 0, 0.3);
   opacity: 0;
   visibility: hidden;
@@ -566,8 +566,8 @@ body.profile-page-active .container {
   position: fixed;
   left: 16px;
   right: 16px;
-  bottom: 100px;
-  z-index: 100;
+  bottom: calc(80px + env(safe-area-inset-bottom));
+  z-index: 1301;
   background: var(--card);
   border-radius: var(--radius);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
