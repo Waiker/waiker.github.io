@@ -113,35 +113,32 @@
           <div id="profileBadges" class="profile-badges"></div>
         </div>
 
-        <!-- Компактный блок: просмотрено + уровень -->
-        <div class="profile-stats-compact">
-          <div class="profile-progress-card profile-progress-card--compact">
-            <div class="profile-progress-header profile-progress-header--compact">
-              <span class="profile-progress-value profile-progress-value--compact" id="profileProgressText">0 из 0</span>
-              <span class="profile-progress-label profile-progress-label--compact">Курсов просмотрено</span>
-            </div>
-            <div class="profile-progress-bar profile-progress-bar--compact">
-              <div id="profileProgressFill" class="profile-progress-fill" style="width:0%"></div>
-            </div>
-            <p class="profile-progress-hint profile-progress-hint--compact" id="profileProgressHint">0 из 0 в каталоге</p>
-          </div>
-          <div id="profileLevelBlock" class="profile-progress-card profile-progress-card--compact profile-level-block" style="display:none">
-            <div class="profile-progress-header profile-progress-header--compact">
-              <span class="profile-progress-value profile-progress-value--compact" id="profileLevelText">—</span>
-              <span class="profile-progress-label profile-progress-label--compact">Уровень</span>
-            </div>
-            <div class="profile-progress-bar profile-progress-bar--compact">
-              <div id="profileLevelFill" class="profile-progress-fill" style="width:0%"></div>
+        <!-- Рейтинг (светлый золотой, выше остальных плашек) -->
+        <div class="profile-rating-card">
+          <div class="profile-rating-title">Текущий рейтинг</div>
+          <div class="profile-rating-bar-wrap">
+            <div class="profile-rating-bar">
+              <div class="profile-rating-fill" id="profileRatingFill" style="width:0%"></div>
+              <span class="profile-rating-value" id="profileRating">0</span>
             </div>
           </div>
         </div>
 
-        <!-- Рейтинг (премиум) + закладки -->
-        <div class="profile-stats-grid">
-          <div class="profile-stat-card profile-stat-card--rating">
-            <div class="profile-stat-value profile-stat-value--rating" id="profileRating">0</div>
-            <div class="profile-stat-label profile-stat-label--rating">Рейтинг</div>
+        <!-- Небольшие плашки: просмотрено + уровень -->
+        <div class="profile-stats-compact">
+          <div class="profile-mini-card profile-mini-card--watched">
+            <span class="profile-mini-label">Курсов просмотрено</span>
+            <div class="profile-mini-bar">
+              <div id="profileProgressFill" class="profile-mini-fill" style="width:0%"></div>
+            </div>
           </div>
+          <div id="profileLevelBlock" class="profile-mini-card profile-mini-card--level" style="display:none">
+            <span class="profile-mini-level" id="profileLevelText">Уровень 1</span>
+          </div>
+        </div>
+
+        <!-- Закладки -->
+        <div class="profile-stats-grid">
           <div class="profile-stat-card">
             <div class="profile-stat-value" id="profileBookmarksCount">0</div>
             <div class="profile-stat-label">В закладках</div>

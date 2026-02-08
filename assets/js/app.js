@@ -408,9 +408,7 @@ function getBeltConfigByValue(val){
 function renderProfile(){
   const avatarEl = $('#profileAvatar');
   const nameEl = $('#profileName');
-  const progressText = $('#profileProgressText');
   const progressFill = $('#profileProgressFill');
-  const progressHint = $('#profileProgressHint');
   const bookmarksCount = $('#profileBookmarksCount');
   const achievementsEl = $('#profileAchievements');
   const badgesEl = $('#profileBadges');
@@ -438,21 +436,23 @@ function renderProfile(){
   const watched = STATE.watched.length;
   const total = STATE.courses.length;
   const pct = total > 0 ? Math.round((watched / total) * 100) : 0;
-  if (progressText) progressText.textContent = watched + ' из ' + total;
   if (progressFill) progressFill.style.width = pct + '%';
-  if (progressHint) progressHint.textContent = watched + ' из ' + total + ' в каталоге';
   if (bookmarksCount) bookmarksCount.textContent = STATE.bookmarks.length;
+
   const ratingEl = $('#profileRating');
-  if (ratingEl) ratingEl.textContent = STATE.userRating;
+  const ratingFillEl = $('#profileRatingFill');
+  const rating = STATE.userRating || 0;
+  if (ratingEl) ratingEl.textContent = rating;
+  if (ratingFillEl) {
+    const ratingMax = 200;
+    ratingFillEl.style.width = Math.min(100, (rating / ratingMax) * 100) + '%';
+  }
 
   const levelBlock = $('#profileLevelBlock');
   const levelText = $('#profileLevelText');
-  const levelFill = $('#profileLevelFill');
-  if (STATE.userProgress && levelBlock && levelText && levelFill) {
-    levelBlock.style.display = 'block';
-    const p = STATE.userProgress;
-    levelText.textContent = 'Уровень ' + p.level + ' • ' + p.xp + ' XP';
-    levelFill.style.width = (p.progress_percent != null ? p.progress_percent : 0) + '%';
+  if (STATE.userProgress && levelBlock && levelText) {
+    levelBlock.style.display = 'flex';
+    levelText.textContent = 'Уровень ' + STATE.userProgress.level;
   } else if (levelBlock) levelBlock.style.display = 'none';
 
   /* achievements */
