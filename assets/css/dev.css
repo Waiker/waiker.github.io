@@ -388,6 +388,19 @@ body.profile-page-active .container {
   height: 24px;
 }
 
+/* Компактный ряд: просмотрено + уровень */
+.profile-stats-compact {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 380px) {
+  .profile-stats-compact {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Progress card */
 .profile-progress-card {
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
@@ -395,6 +408,37 @@ body.profile-page-active .container {
   padding: 20px;
   box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
   border: 1px solid rgba(37, 99, 235, 0.2);
+}
+
+/* Компактная плашка прогресса/уровня */
+.profile-progress-card--compact {
+  padding: 12px 14px;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.12);
+}
+
+.profile-progress-header--compact {
+  margin-bottom: 6px;
+}
+
+.profile-progress-value--compact {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.profile-progress-label--compact {
+  font-size: 12px !important;
+}
+
+.profile-progress-bar--compact {
+  height: 6px;
+  background: rgba(37, 99, 235, 0.2);
+  margin-bottom: 0;
+}
+
+.profile-progress-hint--compact {
+  margin: 4px 0 0 !important;
+  font-size: 11px !important;
+  opacity: 0.9;
 }
 
 .profile-progress-header {
@@ -456,6 +500,31 @@ body.profile-page-active .container {
   box-shadow: var(--shadow);
 }
 
+/* Рейтинг — благородный золотой, премиальный акцент */
+.profile-stat-card--rating {
+  background: linear-gradient(145deg, #2d2616 0%, #1a1810 100%);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.profile-stat-value--rating {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #e8d48b;
+  text-shadow: 0 0 20px rgba(232, 212, 139, 0.4);
+  letter-spacing: 0.02em;
+}
+
+.profile-stat-label--rating {
+  font-size: 12px;
+  font-weight: 600;
+  color: #c9a227;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+  opacity: 0.95;
+}
+
 .profile-stat-value {
   font-size: 1.5rem;
   font-weight: 700;
@@ -466,12 +535,6 @@ body.profile-page-active .container {
   font-size: 13px;
   color: var(--muted);
   margin-top: 4px;
-}
-
-.profile-progress-bar--compact {
-  height: 6px;
-  margin-top: 10px;
-  margin-bottom: 0;
 }
 
 .profile-progress-hint {

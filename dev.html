@@ -113,31 +113,35 @@
           <div id="profileBadges" class="profile-badges"></div>
         </div>
 
-        <!-- Progress card (просмотрено курсов) -->
-        <div class="profile-progress-card">
-          <div class="profile-progress-header">
-            <span class="profile-progress-value" id="profileProgressText">0 из 0</span>
-            <span class="profile-progress-label">Курсов просмотрено</span>
+        <!-- Компактный блок: просмотрено + уровень -->
+        <div class="profile-stats-compact">
+          <div class="profile-progress-card profile-progress-card--compact">
+            <div class="profile-progress-header profile-progress-header--compact">
+              <span class="profile-progress-value profile-progress-value--compact" id="profileProgressText">0 из 0</span>
+              <span class="profile-progress-label profile-progress-label--compact">Курсов просмотрено</span>
+            </div>
+            <div class="profile-progress-bar profile-progress-bar--compact">
+              <div id="profileProgressFill" class="profile-progress-fill" style="width:0%"></div>
+            </div>
+            <p class="profile-progress-hint profile-progress-hint--compact" id="profileProgressHint">0 из 0 в каталоге</p>
           </div>
-          <div class="profile-progress-bar profile-progress-bar--large">
-            <div id="profileProgressFill" class="profile-progress-fill" style="width:0%"></div>
+          <div id="profileLevelBlock" class="profile-progress-card profile-progress-card--compact profile-level-block" style="display:none">
+            <div class="profile-progress-header profile-progress-header--compact">
+              <span class="profile-progress-value profile-progress-value--compact" id="profileLevelText">—</span>
+              <span class="profile-progress-label profile-progress-label--compact">Уровень</span>
+            </div>
+            <div class="profile-progress-bar profile-progress-bar--compact">
+              <div id="profileLevelFill" class="profile-progress-fill" style="width:0%"></div>
+            </div>
           </div>
-          <p class="profile-progress-hint" id="profileProgressHint">Вы просмотрели 0 курсов из 0 в каталоге</p>
         </div>
 
-        <!-- Level & XP (from backend) -->
-        <div id="profileLevelBlock" class="profile-progress-card" style="margin-top:8px;display:none">
-          <div class="profile-progress-header">
-            <span class="profile-progress-value" id="profileLevelText">—</span>
-            <span class="profile-progress-label">Уровень и XP</span>
-          </div>
-          <div class="profile-progress-bar profile-progress-bar--large">
-            <div id="profileLevelFill" class="profile-progress-fill" style="width:0%"></div>
-          </div>
-        </div>
-
-        <!-- Stats: закладки -->
+        <!-- Рейтинг (премиум) + закладки -->
         <div class="profile-stats-grid">
+          <div class="profile-stat-card profile-stat-card--rating">
+            <div class="profile-stat-value profile-stat-value--rating" id="profileRating">0</div>
+            <div class="profile-stat-label profile-stat-label--rating">Рейтинг</div>
+          </div>
           <div class="profile-stat-card">
             <div class="profile-stat-value" id="profileBookmarksCount">0</div>
             <div class="profile-stat-label">В закладках</div>

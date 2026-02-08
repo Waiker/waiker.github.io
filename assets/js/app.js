@@ -30,7 +30,8 @@ let STATE = {
   watched: loadJSON(KEY_WATCHED, []),
   bmMeta: loadJSON(KEY_BM_META, {}),
   profile: loadJSON(KEY_PROFILE, { belt: '', division: '', club: '', status: '' }),
-  userProgress: null
+  userProgress: null,
+  userRating: 0
 };
 
 /* helpers */
@@ -121,6 +122,7 @@ async function userInit(){
       STATE.profile.division = data.user.bio.division || '';
       STATE.profile.club = data.user.bio.club || '';
     }
+    if (data.user && data.user.rating != null) STATE.userRating = parseInt(data.user.rating, 10) || 0;
     if (Array.isArray(data.watched_course_ids)) STATE.watched = data.watched_course_ids;
     if (data.progress) STATE.userProgress = data.progress;
   } catch (e) {
@@ -438,8 +440,10 @@ function renderProfile(){
   const pct = total > 0 ? Math.round((watched / total) * 100) : 0;
   if (progressText) progressText.textContent = watched + ' из ' + total;
   if (progressFill) progressFill.style.width = pct + '%';
-  if (progressHint) progressHint.textContent = 'Вы просмотрели ' + watched + ' курсов из ' + total + ' в каталоге';
+  if (progressHint) progressHint.textContent = watched + ' из ' + total + ' в каталоге';
   if (bookmarksCount) bookmarksCount.textContent = STATE.bookmarks.length;
+  const ratingEl = $('#profileRating');
+  if (ratingEl) ratingEl.textContent = STATE.userRating;
 
   const levelBlock = $('#profileLevelBlock');
   const levelText = $('#profileLevelText');
