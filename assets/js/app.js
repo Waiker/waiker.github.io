@@ -31,7 +31,8 @@ let STATE = {
   bmMeta: loadJSON(KEY_BM_META, {}),
   profile: loadJSON(KEY_PROFILE, { belt: '', division: '', club: '', status: '' }),
   userProgress: null,
-  userRating: 0
+  userRating: 0,
+  leaderboard: null
 };
 
 /* helpers */
@@ -402,6 +403,71 @@ function getBeltConfigByValue(val){
   if (!val) return null;
   const belts = getBeltsConfig();
   return belts.find(b => b.id === val || b.label === val) || null;
+}
+
+/* leaderboard */
+async function fetchLeaderboard(){
+  const initData = getInitData();
+  const headers = { };
+  if (initData) headers['X-Telegram-Init-Data'] = initData;
+  const res = await fetch(USER_API_BASE + '/leaderboard.php', { method: 'GET', headers });
+  if (!res.ok) {
+    STATE.leaderboard = { top: [], me: null };
+    return;
+  }
+  const data = await res.json().catch(() => ({}));
+  STATE.leaderboard = {
+    top: Array.isArray(data.top) ? data.top : [],
+    me: data.me != null ? data.me : null
+  };
+}
+
+function renderLeaderboard(){
+  const listEl = $('#leaderboardList');
+  const meBlockEl = $('#leaderboardMeBlock');
+  if (!listEl) return;
+
+  if (!STATE.leaderboard) {
+    listEl.innerHTML = '<p class="leaderboard-loading">Загрузка...</p>';
+    if (meBlockEl) meBlockEl.style.display = 'none';
+    return;
+  }
+
+  const { top, me } = STATE.leaderboard;
+  const belts = getBeltsConfig();
+
+  listEl.innerHTML = '';
+  if (top.length === 0) {
+    listEl.innerHTML = '<p class="leaderboard-empty">Пока никого нет в рейтинге.</p>';
+  } else {
+    top.forEach(row => {
+      const beltCfg = row.belt_id ? getBeltConfigByValue(row.belt_id) : null;
+      const rowEl = document.createElement('div');
+      rowEl.className = 'leaderboard-row' + (row.is_me ? ' leaderboard-row--me' : '');
+      const beltImg = beltCfg && beltCfg.icon
+        ? `<img class="leaderboard-belt-icon" src="${escapeHtml(beltCfg.icon)}" alt="" />`
+        : '<span class="leaderboard-belt-placeholder">—</span>';
+      rowEl.innerHTML =
+        `<span class="leaderboard-rank">${row.rank}</span>` +
+        `<span class="leaderboard-username">${escapeHtml(row.username)}</span>` +
+        `<span class="leaderboard-level">${row.level}</span>` +
+        `<span class="leaderboard-rating">${row.rating}</span>` +
+        `<span class="leaderboard-belt">${beltImg}</span>`;
+      listEl.appendChild(rowEl);
+    });
+  }
+
+  if (meBlockEl) {
+    if (me && me.rank != null && !me.in_top) {
+      meBlockEl.textContent = 'Ваше место в общем рейтинге: ' + me.rank;
+      meBlockEl.style.display = 'block';
+    } else if (me && me.rank != null && me.in_top) {
+      meBlockEl.textContent = 'Ваше место: ' + me.rank;
+      meBlockEl.style.display = 'block';
+    } else {
+      meBlockEl.style.display = 'none';
+    }
+  }
 }
 
 /* profile */
@@ -778,7 +844,7 @@ document.addEventListener('click', (e)=>{
 
 /* navigation bottom */
 $all('.nav-item').forEach(n=>{
-  n.addEventListener('click', ()=>{
+  n.addEventListener('click', async ()=>{
     $all('.nav-item').forEach(x=>x.classList.remove('active'));
     n.classList.add('active');
     const target = n.dataset.target;
@@ -787,6 +853,13 @@ $all('.nav-item').forEach(n=>{
     if (target === 'page-profile') {
       document.body.classList.add('profile-page-active');
       renderProfile();
+    } else if (target === 'page-leaderboard') {
+      document.body.classList.remove('profile-page-active');
+      if (!STATE.leaderboard) {
+        renderLeaderboard();
+        await fetchLeaderboard();
+      }
+      renderLeaderboard();
     } else {
       document.body.classList.remove('profile-page-active');
     }

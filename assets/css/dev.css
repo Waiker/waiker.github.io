@@ -1018,6 +1018,82 @@ body.profile-page-active .container {
   color: var(--muted);
 }
 
+/* ——— Leaderboard ——— */
+.leaderboard-me-block {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 48px 64px 40px;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  background: var(--card-bg);
+  border: 1px solid transparent;
+}
+
+.leaderboard-row--me {
+  background: rgba(var(--accent-rgb, 59, 130, 246), 0.12);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.leaderboard-rank {
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.leaderboard-username {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboard-level,
+.leaderboard-rating {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.leaderboard-belt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.leaderboard-belt-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.leaderboard-belt-placeholder {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.leaderboard-loading,
+.leaderboard-empty {
+  padding: 24px 12px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
 /* ——— Bottom nav ——— */
 .bottom-nav {
   height: auto;
