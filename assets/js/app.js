@@ -187,20 +187,7 @@ function renderCatalog(){
   const coursesWrap = $('#courses');
   coursesWrap.innerHTML = '';
   $('#countInfo').textContent = `${list.length} курса(ов)`;
-  const sort = $('#sortSelect') ? $('#sortSelect').value : 'name_asc';
-  const sortVal = sort || 'name_asc';
-  list.sort((a,b)=>{
-    if(sortVal==='name_asc') return a.name.localeCompare(b.name,'ru');
-    if(sortVal==='name_desc') return b.name.localeCompare(a.name,'ru');
-    if (STATE.catalogFilter === 'bookmarks' && (sortVal === 'added_desc' || sortVal === 'added_asc')) {
-      const ta = STATE.bmMeta[a.url]?.addedAt || 0;
-      const tb = STATE.bmMeta[b.url]?.addedAt || 0;
-      return sortVal === 'added_desc' ? tb - ta : ta - tb;
-    }
-    if(sortVal==='added_desc') return (b.id || 0) - (a.id || 0);
-    if(sortVal==='added_asc') return (a.id || 0) - (b.id || 0);
-    return 0;
-  });
+  list.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
 
   list.forEach(c=>{
     const card = document.createElement('div'); card.className='course-card';

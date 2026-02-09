@@ -217,15 +217,6 @@ body {
   gap: 12px;
 }
 
-.controls select {
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  border: 1px solid #e2e8f0;
-  background: var(--card);
-  font-size: 14px;
-  min-height: 44px;
-}
-
 .courses {
   gap: 14px;
 }
