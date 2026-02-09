@@ -414,12 +414,13 @@ function renderLeaderboard(){
 
   const { top, me } = STATE.leaderboard;
   const belts = getBeltsConfig();
+  const top20 = (Array.isArray(top) ? top : []).slice(0, 20);
 
   listEl.innerHTML = '';
-  if (top.length === 0) {
+  if (top20.length === 0) {
     listEl.innerHTML = '<p class="leaderboard-empty">Пока никого нет в рейтинге.</p>';
   } else {
-    top.forEach(row => {
+    top20.forEach(row => {
       const beltCfg = row.belt_id ? getBeltConfigByValue(row.belt_id) : null;
       const rowEl = document.createElement('div');
       rowEl.className = 'leaderboard-row' + (row.is_me ? ' leaderboard-row--me' : '');
