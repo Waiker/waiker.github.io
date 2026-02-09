@@ -70,6 +70,11 @@
   <main class="container">
 
     <section id="page-catalog" class="page active">
+      <div id="catalogQuickFilters" class="catalog-quick-filters" aria-label="Быстрые фильтры">
+        <button type="button" class="catalog-filter-chip active" data-filter="all">Все</button>
+        <button type="button" class="catalog-filter-chip" data-filter="bookmarks">В закладках</button>
+        <button type="button" class="catalog-filter-chip" data-filter="watched">Просмотрено</button>
+      </div>
       <div class="controls">
         <div class="small-muted" id="countInfo">Загрузка...</div>
         <div style="margin-left:auto">
@@ -77,27 +82,11 @@
             <option value="name_asc">По имени (А→Я)</option>
             <option value="name_desc">По имени (Я→А)</option>
             <option value="added_desc">По дате добавления</option>
+            <option value="added_asc">По дате (старые)</option>
           </select>
         </div>
       </div>
       <div id="courses" class="courses"></div>
-    </section>
-
-    <section id="page-bookmarks" class="page">
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <h2 style="margin:0">Закладки</h2>
-        <select id="bmSort" style="margin-left:auto">
-          <option value="added_desc">По дате (новые)</option>
-          <option value="added_asc">По дате (старые)</option>
-          <option value="name_asc">По имени</option>
-        </select>
-      </div>
-      <div id="bookmarksList" class="courses" style="margin-top:12px"></div>
-    </section>
-
-    <section id="page-watched" class="page">
-      <h2 style="margin:0 0 8px 0">Просмотрено</h2>
-      <div id="watchedList" class="courses"></div>
     </section>
 
     <section id="page-leaderboard" class="page">
@@ -213,8 +202,6 @@
 
   <nav class="bottom-nav" role="navigation">
     <div class="nav-item active" data-target="page-catalog"><i class="fa-solid fa-book"></i>Каталог</div>
-    <div class="nav-item" data-target="page-bookmarks"><i class="fa-solid fa-star"></i>Закладки</div>
-    <div class="nav-item" data-target="page-watched"><i class="fa-solid fa-check"></i>Просмотрено</div>
     <div class="nav-item" data-target="page-leaderboard"><i class="fa-solid fa-users"></i>Участники</div>
     <div class="nav-item" data-target="page-profile"><i class="fa-solid fa-user"></i>Профиль</div>
   </nav>

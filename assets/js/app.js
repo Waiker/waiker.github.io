@@ -26,6 +26,7 @@ let STATE = {
   categories: [],
   activeCategory: null,
   query: '',
+  catalogFilter: 'all', /* 'all' | 'bookmarks' | 'watched' */
   bookmarks: loadJSON(KEY_BOOKMARKS, []),
   watched: loadJSON(KEY_WATCHED, []),
   bmMeta: loadJSON(KEY_BM_META, {}),
@@ -186,12 +187,18 @@ function renderCatalog(){
   const coursesWrap = $('#courses');
   coursesWrap.innerHTML = '';
   $('#countInfo').textContent = `${list.length} курса(ов)`;
-  // sorting
-  const sort = $('#sortSelect').value || 'name_asc';
+  const sort = $('#sortSelect') ? $('#sortSelect').value : 'name_asc';
+  const sortVal = sort || 'name_asc';
   list.sort((a,b)=>{
-    if(sort==='name_asc') return a.name.localeCompare(b.name,'ru');
-    if(sort==='name_desc') return b.name.localeCompare(a.name,'ru');
-    if(sort==='added_desc') return b.id - a.id;
+    if(sortVal==='name_asc') return a.name.localeCompare(b.name,'ru');
+    if(sortVal==='name_desc') return b.name.localeCompare(a.name,'ru');
+    if (STATE.catalogFilter === 'bookmarks' && (sortVal === 'added_desc' || sortVal === 'added_asc')) {
+      const ta = STATE.bmMeta[a.url]?.addedAt || 0;
+      const tb = STATE.bmMeta[b.url]?.addedAt || 0;
+      return sortVal === 'added_desc' ? tb - ta : ta - tb;
+    }
+    if(sortVal==='added_desc') return (b.id || 0) - (a.id || 0);
+    if(sortVal==='added_asc') return (a.id || 0) - (b.id || 0);
     return 0;
   });
 
@@ -258,9 +265,8 @@ function escapeHtml(s){ return String(s||'').replaceAll('&','&amp;').replaceAll(
 function renderAll(){
   buildAutocompleteIndex();
   renderCategoryChips();
+  renderCatalogQuickFilters();
   renderCatalog();
-  renderBookmarks();
-  renderWatched();
   renderProfile();
 }
 
@@ -277,10 +283,10 @@ function renderCategoryChips(){
   });
 }
 
-/* filtering logic (search + category + watched filter if needed) */
+/* filtering logic (search + category + catalog quick filter) */
 function filterCourses(){
   const q = (STATE.query || '').trim().toLowerCase();
-  return STATE.courses.filter(c=>{
+  let list = STATE.courses.filter(c=>{
     // name or category names match
     const nameOk = (c.name||'').toLowerCase().includes(q);
     const catText = (c.categories||[]).join(' ').toLowerCase();
@@ -289,6 +295,9 @@ function filterCourses(){
     if(STATE.activeCategory && !(c.category_ids||[]).includes(STATE.activeCategory)) return false;
     return true;
   });
+  if (STATE.catalogFilter === 'bookmarks') list = list.filter(c => STATE.bookmarks.includes(c.url));
+  if (STATE.catalogFilter === 'watched') list = list.filter(c => isCourseWatched(c));
+  return list;
 }
 
 
@@ -304,30 +313,30 @@ function toggleBookmark(course){
   if(i>=0){ STATE.bookmarks.splice(i,1); delete STATE.bmMeta[course.url]; saveJSON(KEY_BOOKMARKS, STATE.bookmarks); saveJSON(KEY_BM_META, STATE.bmMeta); showToast('Удалено из закладок'); }
   else { STATE.bookmarks.push(course.url); STATE.bmMeta[course.url] = { addedAt: Date.now(), name: course.name }; saveJSON(KEY_BOOKMARKS, STATE.bookmarks); saveJSON(KEY_BM_META, STATE.bmMeta); showToast('Добавлено в закладки'); }
   lastMarkAt = Date.now();
-  renderCatalog(); renderBookmarks(); renderProfile();
+  renderCatalog(); renderProfile();
 }
-function renderBookmarks(){
-  const mount = $('#bookmarksList'); mount.innerHTML='';
-  const items = STATE.bookmarks.map(url => STATE.courses.find(c=>c.url===url)).filter(Boolean);
-  const sortv = $('#bmSort')?$('#bmSort').value:'added_desc';
-  items.sort((a,b)=>{
-    if(sortv==='added_desc') return (STATE.bmMeta[b.url]?.addedAt||0) - (STATE.bmMeta[a.url]?.addedAt||0);
-    if(sortv==='added_asc') return (STATE.bmMeta[a.url]?.addedAt||0) - (STATE.bmMeta[b.url]?.addedAt||0);
-    if(sortv==='name_asc') return a.name.localeCompare(b.name,'ru');
-    return 0;
+
+function renderCatalogQuickFilters(){
+  const wrap = $('#catalogQuickFilters');
+  if (!wrap) return;
+  Array.from(wrap.querySelectorAll('.catalog-filter-chip')).forEach(el => {
+    const filter = el.getAttribute('data-filter');
+    if (!filter) return;
+    el.classList.toggle('active', STATE.catalogFilter === filter);
   });
-  if(items.length===0){ mount.innerHTML = '<div style="color:#888">Закладок нет</div>'; return; }
-  items.forEach(c=>{
-    const card = document.createElement('div'); card.className='course-card';
-    const left = document.createElement('div'); left.className='course-left';
-    left.innerHTML = `<div class="course-title">${escapeHtml(c.name)}</div><div class="course-meta">${escapeHtml(c.description||c.url)}</div>`;
-    const actions = document.createElement('div'); actions.className='course-actions';
-    const openBtn = document.createElement('button'); openBtn.className='btn-icon'; openBtn.innerHTML='<i class="fa-solid fa-arrow-up-right-from-square"></i>'; openBtn.onclick=()=>window.open(c.url,'_blank');
-    const rm = document.createElement('button'); rm.className='btn-icon'; rm.innerHTML='<i class="fa-solid fa-trash"></i>'; rm.onclick=()=>{ toggleBookmark(c) };
-    actions.appendChild(openBtn); actions.appendChild(rm);
-    card.appendChild(left); card.appendChild(actions);
-    mount.appendChild(card);
-  });
+  if (!wrap.dataset.bound) {
+    wrap.dataset.bound = '1';
+    wrap.addEventListener('click', (e) => {
+      const chip = e.target.closest('.catalog-filter-chip');
+      if (!chip) return;
+      const filter = chip.getAttribute('data-filter');
+      if (filter && (filter === 'all' || filter === 'bookmarks' || filter === 'watched')) {
+        STATE.catalogFilter = filter;
+        renderCatalogQuickFilters();
+        renderCatalog();
+      }
+    });
+  }
 }
 
 /* watched */
@@ -346,7 +355,7 @@ async function toggleWatched(course){
     saveJSON(KEY_WATCHED, STATE.watched);
     showToast('Отмечено как непросмотренное');
     lastMarkAt = Date.now();
-    renderCatalog(); renderWatched(); renderProfile();
+    renderCatalog(); renderProfile();
     return;
   }
   const initData = getInitData();
@@ -374,24 +383,7 @@ async function toggleWatched(course){
     showToast('Отмечено как просмотрено');
   }
   lastMarkAt = Date.now();
-  renderCatalog(); renderWatched(); renderProfile();
-}
-function renderWatched(){
-  const mount = $('#watchedList'); mount.innerHTML='';
-  const items = STATE.watched.map(idOrUrl => STATE.courses.find(c => c.id === idOrUrl || c.url === idOrUrl)).filter(Boolean);
-  if(items.length===0){ mount.innerHTML = '<div style="color:#888">Нет просмотренных курсов</div>'; renderProfile(); return; }
-  items.forEach(c=>{
-    const card = document.createElement('div'); card.className='course-card';
-    const left = document.createElement('div'); left.className='course-left';
-    left.innerHTML = `<div class="course-title">${escapeHtml(c.name)}</div><div class="course-meta">${escapeHtml(c.description||c.url)}</div>`;
-    const actions = document.createElement('div'); actions.className='course-actions';
-    const openBtn = document.createElement('button'); openBtn.className='btn-icon'; openBtn.innerHTML='<i class="fa-solid fa-arrow-up-right-from-square"></i>'; openBtn.onclick=()=>window.open(c.url,'_blank');
-    const rm = document.createElement('button'); rm.className='btn-icon'; rm.innerHTML='<i class="fa-solid fa-trash"></i>'; rm.onclick=()=>{ toggleWatched(c) };
-    actions.appendChild(openBtn); actions.appendChild(rm);
-    card.appendChild(left); card.appendChild(actions);
-    mount.appendChild(card);
-  });
-  renderProfile();
+  renderCatalog(); renderProfile();
 }
 
 /* profile: helpers for belt config */
