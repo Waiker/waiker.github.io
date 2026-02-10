@@ -632,6 +632,80 @@ body.profile-page-active .container {
   background: #e2e8f0;
 }
 
+/* ——— Access modal (no access to closed group) ——— */
+.access-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1600;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.access-modal-inner {
+  max-width: 420px;
+  width: 100%;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.35);
+  padding: 20px 18px 18px;
+  text-align: center;
+}
+
+.access-modal-title {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.access-modal-subtitle {
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.access-modal-tariffs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.access-modal-tariff-btn {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.access-modal-tariff-btn:active {
+  transform: scale(0.98);
+}
+
+.access-modal-tariff-btn:hover {
+  background: #eef2ff;
+  border-color: var(--accent);
+}
+
+.access-modal-close-btn {
+  margin-top: 4px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
 /* Progress card (базовые стили для других страниц) */
 .profile-progress-card {
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
