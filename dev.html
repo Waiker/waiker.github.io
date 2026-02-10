@@ -192,6 +192,14 @@
 
   <div id="toast"></div>
 
+  <!-- Simple in-app debug panel (dev only) -->
+  <div id="debugPanel" style="display:none;margin:8px;">
+    <textarea id="debugLogBox" style="width:100%;height:140px;font-size:11px;font-family:monospace;" readonly></textarea>
+  </div>
+  <button id="debugToggleBtn" style="position:fixed;right:8px;bottom:64px;z-index:999;font-size:10px;padding:4px 6px;opacity:0.7;">
+    debug
+  </button>
+
   <!-- Access modal: closed group / club -->
   <div id="accessModalBackdrop" class="profile-hint-backdrop" aria-hidden="true" style="display:none"></div>
   <div id="accessModal" class="access-modal" role="dialog" aria-hidden="true" style="display:none">
@@ -211,6 +219,20 @@
 
   <script src="assets/js/profile-config.js"></script>
   <script src="assets/js/app.js"></script>
+  <script>
+    (function(){
+      var btn = document.getElementById('debugToggleBtn');
+      var panel = document.getElementById('debugPanel');
+      if (!btn || !panel) return;
+      btn.addEventListener('click', function () {
+        if (panel.style.display === 'none' || panel.style.display === '') {
+          panel.style.display = 'block';
+        } else {
+          panel.style.display = 'none';
+        }
+      });
+    })();
+  </script>
 
   <!-- Отладка авторизации (раскомментировать при необходимости)
   <script>

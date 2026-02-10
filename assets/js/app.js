@@ -3,6 +3,26 @@ const API_URL = 'https://cp.wtfbjj.ru/api/public.php?token=603B591160C537C6D9629
 const USER_API_BASE = 'https://cp.wtfbjj.ru/miniapp/api';
 const ACCESS_API_URL = USER_API_BASE + '/check_access.php';
 
+/* DEBUG PANEL (in-app) */
+const DEBUG_MAX_LOG_LINES = 200;
+let DEBUG_LOG = [];
+function debugPush(entry) {
+  try {
+    const ts = new Date().toISOString();
+    const line = typeof entry === 'string' ? `[${ts}] ${entry}` : `[${ts}] ${JSON.stringify(entry)}`;
+    DEBUG_LOG.push(line);
+    if (DEBUG_LOG.length > DEBUG_MAX_LOG_LINES) {
+      DEBUG_LOG = DEBUG_LOG.slice(DEBUG_LOG.length - DEBUG_MAX_LOG_LINES);
+    }
+    const box = document.getElementById('debugLogBox');
+    if (box) {
+      box.value = DEBUG_LOG.join('\n');
+    }
+  } catch (e) {
+    // ignore debug errors
+  }
+}
+
 /* STATE + localStorage keys */
 const KEY_BOOKMARKS = 'bookmarkedCourses';
 const KEY_WATCHED = 'watchedCourses';
@@ -272,32 +292,141 @@ async function handleCourseClick(course){
 
   // If not in Telegram WebApp context – keep current behaviour (no access check)
   if (!initData) {
+    debugPush({ loc:'handleCourseClick:no_initData', url: course && course.url ? course.url : null });
     window.open(course.url, '_blank');
     return;
   }
 
   try{
+    debugPush({
+      loc:'handleCourseClick:before_fetch',
+      courseId: course && course.id ? String(course.id) : null,
+      hasInitData: !!initData,
+      initDataLength: initData ? initData.length : 0
+    });
+
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/4162b94a-fd1c-4a8f-ad75-a9068f963cec',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        location:'app.js:handleCourseClick:before_fetch',
+        message:'handleCourseClick before access check',
+        data:{
+          courseId: course && course.id ? String(course.id) : null,
+          hasInitData: !!initData,
+          initDataLength: initData ? initData.length : 0
+        },
+        timestamp:Date.now(),
+        runId:'check_access',
+        hypothesisId:'H1'
+      })
+    }).catch(()=>{});
+    // #endregion
+
     showToast('Проверяем доступ…');
     const res = await fetch(ACCESS_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ initData: initData, course_id: course.id })
     });
+    // #region agent log
+    const _status = res.status;
+    const _ok = res.ok;
+    fetch('http://127.0.0.1:7242/ingest/4162b94a-fd1c-4a8f-ad75-a9068f963cec',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        location:'app.js:handleCourseClick:after_fetch',
+        message:'handleCourseClick after access check fetch',
+        data:{ status:_status, ok:_ok },
+        timestamp:Date.now(),
+        runId:'check_access',
+        hypothesisId:'H2'
+      })
+    }).catch(()=>{});
+    // #endregion
+
     const text = await res.text();
     let data = null;
     try { data = JSON.parse(text); } catch(e) {}
 
+    debugPush({
+      loc:'handleCourseClick:parsed_response',
+      status: res.status,
+      ok: res.ok,
+      rawLength: text.length,
+      allowed: data && typeof data.allowed !== 'undefined' ? data.allowed : null,
+      error: data && data.error ? String(data.error) : null,
+      reason: data && data.reason ? String(data.reason) : null
+    });
+
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/4162b94a-fd1c-4a8f-ad75-a9068f963cec',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        location:'app.js:handleCourseClick:parsed_response',
+        message:'handleCourseClick parsed response',
+        data:{
+          hasData: !!data,
+          allowed: data && typeof data.allowed !== 'undefined' ? data.allowed : null,
+          error: data && data.error ? String(data.error) : null,
+          reason: data && data.reason ? String(data.reason) : null
+        },
+        timestamp:Date.now(),
+        runId:'check_access',
+        hypothesisId:'H3'
+      })
+    }).catch(()=>{});
+    // #endregion
+
     if (res.ok && data && data.allowed === true) {
-      window.open(course.url, '_blank');
+      debugPush({ loc:'handleCourseClick:allowed_true', url: course && course.url ? course.url : null });
+      try {
+        if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openTelegramLink === 'function') {
+          window.Telegram.WebApp.openTelegramLink(course.url);
+        } else {
+          window.open(course.url, '_blank');
+        }
+      } catch (eOpen) {
+        debugPush({ loc:'handleCourseClick:open_error', errName: eOpen && eOpen.name, errMessage: eOpen && eOpen.message });
+        window.open(course.url, '_blank');
+      }
       return;
     }
     if (res.ok && data && data.allowed === false) {
+      debugPush({ loc:'handleCourseClick:allowed_false', reason: data.reason || null });
       showAccessModal(course);
       return;
     }
 
+    debugPush({ loc:'handleCourseClick:unexpected_response' });
     showToast('Ошибка проверки доступа');
   } catch(e){
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/4162b94a-fd1c-4a8f-ad75-a9068f963cec',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        location:'app.js:handleCourseClick:catch',
+        message:'handleCourseClick threw',
+        data:{
+          errName: e && e.name ? String(e.name) : null,
+          errMessage: e && e.message ? String(e.message) : null
+        },
+        timestamp:Date.now(),
+        runId:'check_access',
+        hypothesisId:'H4'
+      })
+    }).catch(()=>{});
+    // #endregion
+
+    debugPush({
+      loc:'handleCourseClick:catch',
+      errName: e && e.name ? String(e.name) : null,
+      errMessage: e && e.message ? String(e.message) : null
+    });
     console.error('handleCourseClick error', e);
     showToast('Ошибка проверки доступа');
   }
