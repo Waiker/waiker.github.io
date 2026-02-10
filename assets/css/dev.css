@@ -632,6 +632,12 @@ body.profile-page-active .container {
   background: #e2e8f0;
 }
 
+/* Более тёмное затемнение для модалки доступа */
+.access-modal-backdrop {
+  background: rgba(15, 23, 42, 0.6);
+  z-index: 1500;
+}
+
 /* ——— Access modal (no access to closed group) ——— */
 .access-modal {
   position: fixed;
