@@ -367,6 +367,7 @@ function showAccessModal(course){
 
   window.scrollTo(0, 0);
   backdrop.style.display = 'block';
+  backdrop.classList.add('is-visible');
   modal.style.display = 'flex';
   modal.setAttribute('aria-hidden', 'false');
 }
@@ -374,7 +375,10 @@ function showAccessModal(course){
 function hideAccessModal(){
   const backdrop = document.getElementById('accessModalBackdrop');
   const modal = document.getElementById('accessModal');
-  if (backdrop) backdrop.style.display = 'none';
+  if (backdrop) {
+    backdrop.style.display = 'none';
+    backdrop.classList.remove('is-visible');
+  }
   if (modal) {
     modal.style.display = 'none';
     modal.setAttribute('aria-hidden', 'true');
