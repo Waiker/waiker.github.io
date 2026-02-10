@@ -1,6 +1,7 @@
 /* CONFIG */
 const API_URL = 'https://cp.wtfbjj.ru/api/public.php?token=603B591160C537C6D962926C3A9AB2DF';
 const USER_API_BASE = 'https://cp.wtfbjj.ru/miniapp/api';
+const ACCESS_API_URL = USER_API_BASE + '/check_access.php';
 
 /* STATE + localStorage keys */
 const KEY_BOOKMARKS = 'bookmarkedCourses';
@@ -51,6 +52,14 @@ function $all(sel){ return Array.from(document.querySelectorAll(sel)) }
 function loadJSON(k,d){ try{ const t=localStorage.getItem(k); return t?JSON.parse(t):d; }catch(e){ return d; } }
 function saveJSON(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
 function showToast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); t.style.opacity=1; setTimeout(()=>{ t.style.opacity=0; },1500); }
+
+/* Access tariffs config for closed group */
+const ACCESS_TARIFFS = [
+  // Replace links/labels/prices with your real tariffs and bot links
+  { id: 'week', title: 'Неделя доступа', price: '990 ₽', link: 'https://t.me/your_bot?start=week' },
+  { id: 'month', title: 'Месяц доступа', price: '2 990 ₽', link: 'https://t.me/your_bot?start=month' },
+  { id: 'forever', title: 'Навсегда', price: '9 900 ₽', link: 'https://t.me/your_bot?start=forever' },
+];
 
 /* ---------- Data loading ---------- */
 async function loadData(){
@@ -235,7 +244,7 @@ function renderCatalog(){
     // delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
     // delBtn.addEventListener('click',(ev)=>{ ev.stopPropagation(); removeCourse(c); });
 
-    card.addEventListener('click', ()=>{ window.open(c.url,'_blank') });
+    card.addEventListener('click', ()=>{ handleCourseClick(c); });
 
     actions.appendChild(bk);
     actions.appendChild(cbBtn);
@@ -255,6 +264,107 @@ function renderAll(){
   renderCatalogQuickFilters();
   renderCatalog();
   renderProfile();
+}
+
+/* ---------- Access check & modal ---------- */
+async function handleCourseClick(course){
+  const initData = getInitData();
+
+  // If not in Telegram WebApp context – keep current behaviour (no access check)
+  if (!initData) {
+    window.open(course.url, '_blank');
+    return;
+  }
+
+  try{
+    showToast('Проверяем доступ…');
+    const res = await fetch(ACCESS_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: initData, course_id: course.id })
+    });
+    const text = await res.text();
+    let data = null;
+    try { data = JSON.parse(text); } catch(e) {}
+
+    if (res.ok && data && data.allowed === true) {
+      window.open(course.url, '_blank');
+      return;
+    }
+    if (res.ok && data && data.allowed === false) {
+      showAccessModal(course);
+      return;
+    }
+
+    showToast('Ошибка проверки доступа');
+  } catch(e){
+    console.error('handleCourseClick error', e);
+    showToast('Ошибка проверки доступа');
+  }
+}
+
+function showAccessModal(course){
+  const backdrop = document.getElementById('accessModalBackdrop');
+  const modal = document.getElementById('accessModal');
+  const titleEl = document.getElementById('accessModalCourseTitle');
+  const tariffsEl = document.getElementById('accessModalTariffs');
+  const closeBtn = document.getElementById('accessModalCloseBtn');
+
+  if (!backdrop || !modal || !titleEl || !tariffsEl) {
+    // Fallback: just notify user
+    showToast('Доступ только для участников закрытого клуба');
+    return;
+  }
+
+  titleEl.textContent = course && course.name ? course.name : '';
+
+  tariffsEl.innerHTML = '';
+  ACCESS_TARIFFS.forEach(tariff => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'access-modal-tariff-btn';
+    const label = tariff.title + (tariff.price ? ' — ' + tariff.price : '');
+    btn.textContent = label;
+    btn.addEventListener('click', () => {
+      const link = tariff.link;
+      if (!link) return;
+      try {
+        if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openTelegramLink === 'function') {
+          window.Telegram.WebApp.openTelegramLink(link);
+        } else {
+          window.open(link, '_blank');
+        }
+      } catch (e) {
+        window.open(link, '_blank');
+      }
+    });
+    tariffsEl.appendChild(btn);
+  });
+
+  const doHide = () => hideAccessModal();
+
+  if (closeBtn && !closeBtn.dataset.bound) {
+    closeBtn.dataset.bound = '1';
+    closeBtn.addEventListener('click', doHide);
+  }
+  if (!backdrop.dataset.bound) {
+    backdrop.dataset.bound = '1';
+    backdrop.addEventListener('click', doHide);
+  }
+
+  backdrop.style.display = 'block';
+  modal.style.display = 'block';
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+function hideAccessModal(){
+  const backdrop = document.getElementById('accessModalBackdrop');
+  const modal = document.getElementById('accessModal');
+  if (backdrop) backdrop.style.display = 'none';
+  if (modal) {
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+  }
 }
 
 function renderCategoryChips(){

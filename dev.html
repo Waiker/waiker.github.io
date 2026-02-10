@@ -192,6 +192,17 @@
 
   <div id="toast"></div>
 
+  <!-- Access modal: closed group / club -->
+  <div id="accessModalBackdrop" class="profile-hint-backdrop" aria-hidden="true" style="display:none"></div>
+  <div id="accessModal" class="access-modal" role="dialog" aria-hidden="true" style="display:none">
+    <div class="access-modal-inner">
+      <h2 class="access-modal-title">Курс доступен только участникам закрытого клуба</h2>
+      <p class="access-modal-subtitle" id="accessModalCourseTitle"></p>
+      <div class="access-modal-tariffs" id="accessModalTariffs"></div>
+      <button type="button" id="accessModalCloseBtn" class="access-modal-close-btn">Позже</button>
+    </div>
+  </div>
+
   <nav class="bottom-nav" role="navigation">
     <div class="nav-item active" data-target="page-catalog"><i class="fa-solid fa-book"></i>Каталог</div>
     <div class="nav-item" data-target="page-leaderboard"><i class="fa-solid fa-users"></i>Участники</div>
