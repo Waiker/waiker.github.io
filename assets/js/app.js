@@ -52,6 +52,24 @@ function $all(sel){ return Array.from(document.querySelectorAll(sel)) }
 function loadJSON(k,d){ try{ const t=localStorage.getItem(k); return t?JSON.parse(t):d; }catch(e){ return d; } }
 function saveJSON(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
 function showToast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); t.style.opacity=1; setTimeout(()=>{ t.style.opacity=0; },1500); }
+function pluralRu(n, one, few, many){
+  const mod10 = n % 10, mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
+  return many;
+}
+
+/* ---------- Telegram theme sync (тёмная/светлая тема из самого Telegram) ---------- */
+function applyTelegramTheme(){
+  const webApp = window.Telegram?.WebApp;
+  const scheme = webApp?.colorScheme === 'dark' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = scheme;
+}
+function initTheme(){
+  applyTelegramTheme();
+  const webApp = window.Telegram?.WebApp;
+  if (webApp?.onEvent) webApp.onEvent('themeChanged', applyTelegramTheme);
+}
 
 /* Access tariffs config for closed group */
 const ACCESS_TARIFFS = [
@@ -106,30 +124,18 @@ function loadMockData(){
 }
 
 async function userInit(){
-  // #region agent log
-  const _authUrl = USER_API_BASE + '/auth.php';
-  fetch('http://127.0.0.1:7242/ingest/4162b94a-fd1c-4a8f-ad75-a9068f963cec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:userInit',message:'userInit called',data:{USER_API_BASE, authUrl: _authUrl, hasTelegram: !!window.Telegram, hasWebApp: !!window.Telegram?.WebApp},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
+  const authUrl = USER_API_BASE + '/auth.php';
   const initData = getInitData();
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/4162b94a-fd1c-4a8f-ad75-a9068f963cec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:userInit',message:'initData check',data:{initDataLength: (initData && initData.length) || 0, willSkip: !initData},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
-  // #endregion
   if (!initData) return;
   try {
-    const res = await fetch(_authUrl, {
+    const res = await fetch(authUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ initData: initData })
     });
-    // #region agent log
-    const _resText = await res.text();
-    fetch('http://127.0.0.1:7242/ingest/4162b94a-fd1c-4a8f-ad75-a9068f963cec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:userInit',message:'auth response',data:{status: res.status, ok: res.ok, bodyLength: _resText.length, bodyPreview: _resText.slice(0, 200)},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
     if (!res.ok) return;
-    const data = (function(){ try { return JSON.parse(_resText); } catch(e) { return null; } })();
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/4162b94a-fd1c-4a8f-ad75-a9068f963cec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:userInit',message:'parsed response',data:{hasUser: !!(data && data.user), hasError: !!(data && data.error), errorMsg: data && data.error},timestamp:Date.now(),hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
+    const data = await res.json().catch(() => null);
+    if (!data) return;
     if (data.user && data.user.bio) {
       STATE.profile.belt = data.user.bio.belt || '';
       STATE.profile.division = data.user.bio.division || '';
@@ -139,9 +145,6 @@ async function userInit(){
     if (Array.isArray(data.watched_course_ids)) STATE.watched = data.watched_course_ids;
     if (data.progress) STATE.userProgress = data.progress;
   } catch (e) {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/4162b94a-fd1c-4a8f-ad75-a9068f963cec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:userInit',message:'userInit catch',data:{errName: e && e.name, errMessage: e && e.message},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
     console.warn('userInit failed', e);
   }
 }
@@ -168,23 +171,18 @@ function renderSuggestions(q){
     el.className = 'item';
     if(r.type==='course'){
       el.innerHTML = `<strong>${escapeHtml(r.ref.name)}</strong> <span style="color:#888;display:block;font-size:13px">${escapeHtml(r.ref.description || r.ref.url)}</span>`;
-      el.onclick = ()=>{ window.open(r.ref.url,'_blank'); box.style.display='none'; $('#searchInput').value=''; STATE.query=''; renderCatalog(); };
+      // через handleCourseClick, чтобы проверка доступа к закрытой группе работала так же, как из карточки
+      el.onclick = ()=>{ box.style.display='none'; $('#searchInput').value=''; STATE.query=''; renderCatalog(); handleCourseClick(r.ref); };
     } else {
-      // el.innerHTML = `<span>#${escapeHtml(r.ref.name)}</span><span class="type-cat">категория</span>`;
-      // el.onclick = ()=>{ STATE.activeCategory = String(r.ref.id); $('#searchInput').value = ''; box.style.display='none'; renderCategories(); renderCatalog(); };
       el.innerHTML = `<span>#${escapeHtml(r.ref.name)}</span><span class="type-cat">категория</span>`;
       el.onclick = () => {
         // Подставляем имя категории в поле поиска — пользователь видит активный фильтр
         $('#searchInput').value = r.ref.name;
-        // Обновляем состояние (query нужен для фильтрации по тексту, activeCategory для чипов)
         STATE.query = String(r.ref.name);
         STATE.activeCategory = String(r.ref.id);
-        // Скрываем подсказки, обновляем визуалку
         box.style.display = 'none';
-        renderCategories();
+        renderCategoryChips();
         renderCatalog();
-        // фокус обратно в поле поиска — удобно для быстрого снятия фильтра
-        // $('#searchInput').focus();
         $('#searchInput').blur();
       };
     }
@@ -197,8 +195,20 @@ function renderCatalog(){
   const list = filterCourses();
   const coursesWrap = $('#courses');
   coursesWrap.innerHTML = '';
-  $('#countInfo').textContent = `${list.length} курса(ов)`;
+  $('#countInfo').textContent = `${list.length} ${pluralRu(list.length, 'курс', 'курса', 'курсов')}`;
   list.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+
+  if (list.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.innerHTML = `
+      <i class="fa-solid fa-magnifying-glass empty-state-icon"></i>
+      <p class="empty-state-title">Ничего не нашлось</p>
+      <p class="empty-state-text">Попробуйте изменить запрос или сбросить фильтры</p>
+    `;
+    coursesWrap.appendChild(empty);
+    return;
+  }
 
   list.forEach(c=>{
     const card = document.createElement('div'); card.className='course-card';
@@ -388,12 +398,25 @@ function hideAccessModal(){
 function renderCategoryChips(){
   const mount = $('#categories');
   mount.innerHTML = '';
-  const visibleCats = STATE.categories;
-  visibleCats.forEach(cat=>{
+  const cats = STATE.categories.slice().sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+  cats.forEach(cat=>{
     const el = document.createElement('button');
     el.className = 'category-chip' + (STATE.activeCategory===cat.id ? ' active' : '');
     el.textContent = '#'+cat.name;
-    el.onclick = ()=>{ STATE.activeCategory = STATE.activeCategory===cat.id? null: cat.id; renderCategoryChips(); renderCatalog(); };
+    el.onclick = ()=>{
+      if (STATE.activeCategory === cat.id) {
+        STATE.activeCategory = null;
+        $('#searchInput').value = '';
+        STATE.query = '';
+      } else {
+        STATE.activeCategory = cat.id;
+        $('#searchInput').value = cat.name;
+        STATE.query = cat.name;
+      }
+      $('#suggestBox').style.display = 'none';
+      renderCategoryChips();
+      renderCatalog();
+    };
     mount.appendChild(el);
   });
 }
@@ -893,36 +916,6 @@ function renderProfile(){
   }
 }
 
-/* categories render (search field for categories is now part of main search) */
-function renderCategories(){
-  const mount = $('#categories');
-  mount.innerHTML = '';
-  const cats = STATE.categories.slice().sort((a,b)=>a.name.localeCompare(b.name,'ru'));
-  cats.forEach(c=>{
-    const el = document.createElement('button'); el.className='category-chip' + (STATE.activeCategory===c.id ? ' active' : '');
-    el.textContent = '#'+c.name;
-    el.addEventListener('click', ()=>{
-      if(STATE.activeCategory === c.id){
-        // turning off filter
-        STATE.activeCategory = null;
-        $('#searchInput').value = '';
-        STATE.query = '';
-      } else {
-        STATE.activeCategory = c.id;
-        // put category name into search field so user sees active filter
-        $('#searchInput').value = c.name;
-        STATE.query = c.name;
-      }
-      $('#suggestBox').style.display='none';
-      renderCategories();
-      renderCatalog();
-      $('#searchInput').focus();
-    });
-    mount.appendChild(el);
-  });
-}
-
-
 $('#searchInput').addEventListener('input', (e) => {
   const q = (e.target.value || '').trim();
   // сохраняем запрос в STATE, чтобы другие функции (filterCourses и т.д.) могли его использовать
@@ -932,7 +925,7 @@ $('#searchInput').addEventListener('input', (e) => {
     // если поле пустое — сбрасываем категорию и подсказки, ререндерим
     STATE.activeCategory = null;
     $('#suggestBox').style.display = 'none';
-    renderCategories(); // обновить визуально чипы категорий
+    renderCategoryChips(); // обновить визуально чипы категорий
     renderCatalog();    // показать все курсы
     return;
   }
@@ -941,13 +934,30 @@ $('#searchInput').addEventListener('input', (e) => {
   renderSuggestions(q);
   renderCatalog();
 });
-$('#searchInput').addEventListener('keydown', (e)=>{
-  if(e.key==='Escape') { $('#searchInput').value=''; STATE.query=''; $('#suggestBox').style.display='none'; renderCatalog(); }
+$('#searchInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    $('#searchInput').value = '';
+    STATE.query = '';
+    $('#suggestBox').style.display = 'none';
+    renderCatalog();
+    return;
+  }
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    STATE.query = e.target.value.trim();
+    STATE.activeCategory = null;
+    $('#suggestBox').style.display = 'none';
+    renderCategoryChips();
+    renderCatalog();
+    e.target.blur();
+  }
 });
 
 /* suggestion click outside close */
-document.addEventListener('click', (e)=>{
-  if(!e.target.closest('#suggestBox') && !e.target.closest('#searchInput')) $('#suggestBox').style.display='none';
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#suggestBox') && !e.target.closest('#searchInput')) {
+    $('#suggestBox').style.display = 'none';
+  }
 });
 
 /* navigation bottom */
@@ -978,34 +988,6 @@ $all('.nav-item').forEach(n=>{
   });
 });
 
-$('#searchInput').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    const query = this.value.trim();
-    
-    // Сброс состояния
-    STATE.query = query;
-    STATE.activeCategory = null;
-    
-    // Скрываем подсказки
-    $('#suggestBox').style.display = 'none';
-    
-    // Обновляем интерфейс
-    renderCategories();
-    renderCatalog();
-    
-    // Закрываем клавиатуру
-    this.blur();
-  }
-});
-
-document.addEventListener('click', function(e) {
-  if (!e.target.closest('#suggestBox') && !e.target.closest('#searchInput')) {
-    $('#suggestBox').style.display = 'none';
-    $('#searchInput').blur();
-  }
-});
-
 
 /* promo open */
 function openPromo(){ window.location.href = 'promo.html'; }
@@ -1013,6 +995,7 @@ function openPromo(){ window.location.href = 'promo.html'; }
 /* init */
 window.addEventListener('DOMContentLoaded', ()=>{
   // init UI
+  initTheme();
   $('#countInfo').textContent = 'Загрузка...';
   loadData();
 });
