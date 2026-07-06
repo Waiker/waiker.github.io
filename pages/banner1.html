@@ -111,12 +111,14 @@
     const tg = window.Telegram.WebApp;
 
     tg.ready();
-    tg.BackButton.show();  // показать кнопку «Назад»
+    if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
+      tg.BackButton.show();  // показать кнопку «Назад»
 
-    tg.BackButton.onClick(() => {
-      tg.BackButton.hide();            // убираем кнопку
-      window.location.href = "../index.html"; // возвращаемся в каталог
-    });
+      tg.BackButton.onClick(() => {
+        tg.BackButton.hide();            // убираем кнопку
+        window.location.href = "../index.html"; // возвращаемся в каталог
+      });
+    }
   </script>
 </head>
 <body>

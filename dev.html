@@ -15,7 +15,9 @@
   <script>
     const tg = window.Telegram.WebApp;
     tg.ready();
-    tg.BackButton.hide();
+    if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
+      tg.BackButton.hide();
+    }
   </script>
 </head>
 <body>
