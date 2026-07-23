@@ -100,11 +100,57 @@ async function loadData(){
     }));
     await userInit();
     renderAll();
+    applyAuthorDeepLink();
   }catch(e){
     console.error('loadData err',e);
     // fallback demo data
     loadMockData();
   }
+}
+
+/* ---------- Deep-link на автора (категорию) ----------
+   Открыть каталог сразу отфильтрованным по автору — как будто его имя
+   ввели в поиск. Два способа передать ссылку:
+   1) Обычный сайт:  https://waiker.github.io/?author=12  (или ?author=Иванов — точное имя категории)
+   2) Из Telegram-бота: https://t.me/ВашБот?startapp=author_12
+      (start_param в Telegram допускает только [A-Za-z0-9_-], поэтому для него
+      всегда используем ID категории, а не кириллическое имя)
+*/
+function getAuthorLinkValue(){
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get('author');
+    if (fromUrl) return String(fromUrl).trim();
+  } catch (e) {}
+
+  try {
+    const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
+    if (startParam) {
+      const m = String(startParam).match(/^author_(.+)$/);
+      return m ? m[1] : String(startParam);
+    }
+  } catch (e) {}
+
+  return null;
+}
+
+function findAuthorCategory(value){
+  if (!value) return null;
+  const byId = STATE.categories.find(c => c.id === String(value));
+  if (byId) return byId;
+  const lower = String(value).toLowerCase();
+  return STATE.categories.find(c => c.name.toLowerCase() === lower) || null;
+}
+
+function applyAuthorDeepLink(){
+  const cat = findAuthorCategory(getAuthorLinkValue());
+  if (!cat) return;
+  STATE.activeCategory = cat.id;
+  STATE.query = cat.name;
+  const input = $('#searchInput');
+  if (input) input.value = cat.name;
+  renderCategoryChips();
+  renderCatalog();
 }
 function loadMockData(){
   STATE.categories = [{id:'1',name:'Леглоки'},{id:'2',name:'Пас гард'},{id:'3',name:'Баттерфляй'},{id:'4',name:'Армбар'}];
@@ -120,7 +166,7 @@ function loadMockData(){
       xp: 100
     });
   }
-  userInit().then(()=> renderAll());
+  userInit().then(()=> { renderAll(); applyAuthorDeepLink(); });
 }
 
 async function userInit(){
