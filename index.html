@@ -76,10 +76,28 @@
         <button type="button" class="catalog-filter-chip" data-filter="bookmarks">В закладках</button>
         <button type="button" class="catalog-filter-chip" data-filter="watched">Просмотрено</button>
       </div>
-      <div class="controls">
-        <div class="small-muted" id="countInfo">Загрузка...</div>
+
+      <!-- Главный экран: горизонтальные подборки (показывается, когда нет активного поиска/фильтра) -->
+      <div id="homeRows" class="home-rows"></div>
+
+      <!-- Результаты поиска/фильтра: старый плоский список -->
+      <div id="searchResults">
+        <div class="controls">
+          <div class="small-muted" id="countInfo">Загрузка...</div>
+        </div>
+        <div id="courses" class="courses"></div>
       </div>
-      <div id="courses" class="courses"></div>
+    </section>
+
+    <!-- Страница категории: грид курсов плитками (открывается кликом по плитке категории на главном) -->
+    <section id="page-category-detail" class="page category-detail-page">
+      <div class="category-detail-header">
+        <button type="button" id="categoryDetailBack" class="category-detail-back" aria-label="Назад">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <h1 id="categoryDetailTitle" class="category-detail-title"></h1>
+      </div>
+      <div id="categoryDetailGrid" class="category-detail-grid"></div>
     </section>
 
     <section id="page-leaderboard" class="page">

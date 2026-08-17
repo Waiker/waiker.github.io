@@ -88,7 +88,13 @@ async function loadData(){
     if(!res.ok) throw new Error('API error '+res.status);
     const data = await res.json();
     // normalize
-    STATE.categories = (data.categories || []).map(c=>({ id:String(c.id), name:c.name }));
+    STATE.categories = (data.categories || []).map(c=>({
+      id:String(c.id),
+      name:c.name,
+      type: c.type || null, // 'instructor' | 'topic' | 'tag' | null (старые/нетипизированные)
+      cover_image: c.cover_image || null,
+      home_order: (c.home_order != null && c.home_order !== '') ? parseInt(c.home_order, 10) : null
+    }));
     STATE.courses = (data.courses || []).map(c=>({
       id:String(c.id),
       name:c.name || '',
@@ -96,6 +102,8 @@ async function loadData(){
       description:c.description || '',
       category_ids: (c.category_ids || []).map(String),
       categories: (c.categories || []),
+      cover_image: c.cover_image || null,
+      created_at: c.created_at || null,
       xp: (c.xp != null && c.xp !== '') ? parseInt(c.xp, 10) : 100
     }));
     await userInit();
@@ -152,20 +160,64 @@ function applyAuthorDeepLink(){
   renderCategoryChips();
   renderCatalog();
 }
+/* Тестовые данные для локального просмотра (используются, когда API недоступен —
+   например, при открытии index.html напрямую как файла: браузер блокирует запрос
+   к cp.wtfbjj.ru по CORS, т.к. Origin не совпадает с https://waiker.github.io).
+   Набор специально приближен по пропорциям к реальной БД (много авторов, несколько
+   тем, несколько тег-подборок), чтобы вёрстку/логику рядов можно было проверять
+   локально без доступа к настоящему API. */
 function loadMockData(){
-  STATE.categories = [{id:'1',name:'Леглоки'},{id:'2',name:'Пас гард'},{id:'3',name:'Баттерфляй'},{id:'4',name:'Армбар'}];
+  const instructorNames = [
+    'John Danaher', 'Gordon Ryan', 'Craig Jones', 'Nicholas Meregali', 'Marcelo Garcia',
+    'Bernardo Faria', 'Lachlan Giles', 'Mikey Musumeci', 'Keenan Cornelius', 'Andre Galvao'
+  ];
+  const topicNames = ['Леглоки', 'Пас гард', 'Треугольник', 'Кимура', 'Де Ла Рива', 'Халф гард'];
+  const tagDefs = [
+    { name: 'Бесплатно', share: 0.15 },
+    { name: 'детям', share: 0.08 },
+    { name: 'переводы', share: 0.5 }
+  ];
+
+  let nextId = 1;
+  const mkCat = (name, type) => ({ id: String(nextId++), name, type, cover_image: null, home_order: null });
+
+  const instructorCats = instructorNames.map(n => mkCat(n, 'instructor'));
+  const topicCats = topicNames.map(n => mkCat(n, 'topic'));
+  const tagCats = tagDefs.map(t => mkCat(t.name, 'tag'));
+
+  STATE.categories = [...instructorCats, ...topicCats, ...tagCats];
   STATE.courses = [];
-  for(let i=1;i<=12;i++){
-    STATE.courses.push({
-      id:String(100+i),
-      name:`Курс ${i} — ${STATE.categories[(i-1)%STATE.categories.length].name}`,
-      url:`https://t.me/example/${100+i}`,
-      description:`Описание курса ${i}`,
-      category_ids:[String(((i-1)%STATE.categories.length)+1)],
-      categories:[STATE.categories[(i-1)%STATE.categories.length].name],
-      xp: 100
-    });
-  }
+
+  let courseId = 1000;
+  instructorCats.forEach((instr, idx) => {
+    // разное число курсов на автора, чтобы "Топ авторов" реально отличался по сортировке
+    const count = 3 + ((idx * 2) % 6);
+    for (let i = 0; i < count; i++) {
+      const topic = topicCats[(idx + i) % topicCats.length];
+      const id = String(courseId++);
+      const daysAgo = (idx * 5 + i) % 40;
+      const categoryIds = [instr.id, topic.id];
+
+      const tag = tagDefs.find(t => Math.random() < t.share / count);
+      if (tag) {
+        const tagCat = tagCats.find(c => c.name === tag.name);
+        if (tagCat) categoryIds.push(tagCat.id);
+      }
+
+      STATE.courses.push({
+        id,
+        name: `${topic.name}: ${instr.name}`,
+        url: `https://t.me/example/${id}`,
+        description: `Разбор техники «${topic.name}» от ${instr.name}`,
+        category_ids: categoryIds,
+        categories: categoryIds.map(cid => STATE.categories.find(c => c.id === cid)?.name).filter(Boolean),
+        cover_image: null,
+        created_at: new Date(Date.now() - daysAgo * 86400000).toISOString().slice(0, 19).replace('T', ' '),
+        xp: 100
+      });
+    }
+  });
+
   userInit().then(()=> { renderAll(); applyAuthorDeepLink(); });
 }
 
@@ -237,7 +289,264 @@ function renderSuggestions(q){
   box.style.display='block';
 }
 
+/* ---------- Главный экран: подборки-ряды с обложками ---------- */
+
+/* Показываем ряды, только когда нет активного поиска/категории/спецфильтра —
+   иначе (как и раньше) показываем плоский список результатов поиска */
+function isHomeMode(){
+  return STATE.catalogFilter === 'all' && !STATE.query && !STATE.activeCategory;
+}
+
+/* Автогенерируемая заглушка обложки: стабильный градиент по хэшу названия */
+const COVER_GRADIENTS = [
+  'linear-gradient(135deg,#FF6B6B,#C44569)',
+  'linear-gradient(135deg,#4E54C8,#8F94FB)',
+  'linear-gradient(135deg,#11998e,#38ef7d)',
+  'linear-gradient(135deg,#F7971E,#FFD200)',
+  'linear-gradient(135deg,#8E2DE2,#4A00E0)',
+  'linear-gradient(135deg,#00c6ff,#0072ff)',
+  'linear-gradient(135deg,#f857a6,#ff5858)',
+  'linear-gradient(135deg,#3a1c71,#d76d77,#ffaf7b)'
+];
+function hashStr(s){
+  let h = 0;
+  for (let i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) | 0; }
+  return Math.abs(h);
+}
+function pickGradient(seed){
+  return COVER_GRADIENTS[hashStr(String(seed)) % COVER_GRADIENTS.length];
+}
+function shortLabel(name){
+  return String(name || '?').trim().slice(0, 2).toUpperCase();
+}
+
+function buildCoverEl(imageUrl, seed, label){
+  const el = document.createElement('div');
+  el.className = 'cover-tile-media';
+  if (imageUrl) {
+    el.style.backgroundImage = `url("${imageUrl}")`;
+  } else {
+    el.style.backgroundImage = pickGradient(seed);
+    const labelEl = document.createElement('span');
+    labelEl.className = 'cover-tile-placeholder-label';
+    labelEl.textContent = label;
+    el.appendChild(labelEl);
+  }
+  return el;
+}
+
+function isRecentCourse(course){
+  if (!course.created_at) return false;
+  const d = new Date(String(course.created_at).replace(' ', 'T'));
+  if (isNaN(d.getTime())) return false;
+  return (Date.now() - d.getTime()) < 1000 * 60 * 60 * 24 * 90; // не старше 3 месяцев
+}
+
+function buildCourseTile(course){
+  const tile = document.createElement('div');
+  tile.className = 'course-tile';
+
+  const cover = buildCoverEl(course.cover_image, 'course-' + course.id, shortLabel(course.name));
+
+  const bk = document.createElement('button');
+  bk.type = 'button';
+  bk.className = 'course-tile-bookmark' + (STATE.bookmarks.includes(course.url) ? ' active' : '');
+  bk.innerHTML = STATE.bookmarks.includes(course.url) ? '<i class="fa-solid fa-star"></i>' : '<i class="fa-regular fa-star"></i>';
+  bk.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    toggleBookmark(course);
+    const nowBookmarked = STATE.bookmarks.includes(course.url);
+    bk.classList.toggle('active', nowBookmarked);
+    bk.innerHTML = nowBookmarked ? '<i class="fa-solid fa-star"></i>' : '<i class="fa-regular fa-star"></i>';
+  });
+  cover.appendChild(bk);
+
+  if (isRecentCourse(course)) {
+    const badge = document.createElement('span');
+    badge.className = 'course-tile-badge';
+    badge.textContent = 'новое';
+    cover.appendChild(badge);
+  }
+
+  const title = document.createElement('div');
+  title.className = 'course-tile-title';
+  title.textContent = course.name;
+
+  tile.appendChild(cover);
+  tile.appendChild(title);
+  tile.addEventListener('click', () => handleCourseClick(course));
+  return tile;
+}
+
+function buildCategoryTile(cat){
+  const tile = document.createElement('div');
+  tile.className = 'category-tile';
+
+  const cover = buildCoverEl(cat.cover_image, 'cat-' + cat.id, shortLabel(cat.name));
+
+  const title = document.createElement('div');
+  title.className = 'category-tile-title';
+  title.textContent = cat.name;
+
+  tile.appendChild(cover);
+  tile.appendChild(title);
+  tile.addEventListener('click', () => openCategoryDetail(cat));
+  return tile;
+}
+
+/* items — то, что показано в самом ряду (уже урезано до превью-лимита);
+   fullItems — полный список для кнопки "Смотреть все" (если не передан — используется items) */
+function buildHomeRow(title, items, tileBuilder, fullItems){
+  if (!items || items.length === 0) return null;
+  const row = document.createElement('div');
+  row.className = 'home-row';
+
+  const head = document.createElement('div');
+  head.className = 'home-row-head';
+
+  const heading = document.createElement('div');
+  heading.className = 'home-row-title';
+  heading.textContent = title;
+  head.appendChild(heading);
+
+  const full = fullItems || items;
+  if (full.length > items.length) {
+    const seeAll = document.createElement('button');
+    seeAll.type = 'button';
+    seeAll.className = 'home-row-seeall';
+    seeAll.textContent = 'Смотреть все →';
+    seeAll.addEventListener('click', () => openGridDetail(title, full, tileBuilder));
+    head.appendChild(seeAll);
+  }
+
+  const scroller = document.createElement('div');
+  scroller.className = 'home-row-scroller';
+  items.forEach(it => scroller.appendChild(tileBuilder(it)));
+
+  row.appendChild(head);
+  row.appendChild(scroller);
+  return row;
+}
+
+const HOME_ROW_PREVIEW_LIMIT = 12;
+
+function renderHomeRows(){
+  const wrap = $('#homeRows');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+
+  const allNewest = STATE.courses
+    .filter(c => c.created_at)
+    .slice()
+    .sort((a, b) => new Date(String(b.created_at).replace(' ', 'T')) - new Date(String(a.created_at).replace(' ', 'T')));
+
+  const courseCountByCategory = {};
+  STATE.courses.forEach(c => (c.category_ids || []).forEach(id => {
+    courseCountByCategory[id] = (courseCountByCategory[id] || 0) + 1;
+  }));
+
+  const allTopInstructors = STATE.categories
+    .filter(cat => cat.type === 'instructor' && courseCountByCategory[cat.id])
+    .slice()
+    .sort((a, b) => (courseCountByCategory[b.id] || 0) - (courseCountByCategory[a.id] || 0));
+
+  const allTopTopics = STATE.categories
+    .filter(cat => cat.type === 'topic' && courseCountByCategory[cat.id])
+    .slice()
+    .sort((a, b) => (courseCountByCategory[b.id] || 0) - (courseCountByCategory[a.id] || 0));
+
+  const tagCategories = STATE.categories.filter(cat => cat.type === 'tag');
+
+  const rows = [];
+
+  const newestRow = buildHomeRow('Новинки', allNewest.slice(0, HOME_ROW_PREVIEW_LIMIT), buildCourseTile, allNewest);
+  if (newestRow) rows.push(newestRow);
+
+  const topAuthorsRow = buildHomeRow('Топ авторов', allTopInstructors.slice(0, HOME_ROW_PREVIEW_LIMIT), buildCategoryTile, allTopInstructors);
+  if (topAuthorsRow) rows.push(topAuthorsRow);
+
+  const topTopicsRow = buildHomeRow('Топ категорий', allTopTopics.slice(0, HOME_ROW_PREVIEW_LIMIT), buildCategoryTile, allTopTopics);
+  if (topTopicsRow) rows.push(topTopicsRow);
+
+  // подборки по конкретной категории (сейчас — теговые категории: Бесплатно/детям/переводы и т.п.)
+  tagCategories.forEach(tag => {
+    const courses = STATE.courses.filter(c => (c.category_ids || []).includes(tag.id));
+    const row = buildHomeRow(tag.name, courses.slice(0, HOME_ROW_PREVIEW_LIMIT), buildCourseTile, courses);
+    if (row) rows.push(row);
+  });
+
+  if (rows.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.innerHTML = `
+      <i class="fa-solid fa-book-open empty-state-icon"></i>
+      <p class="empty-state-title">Каталог пока пуст</p>
+    `;
+    wrap.appendChild(empty);
+    return;
+  }
+
+  rows.forEach(row => wrap.appendChild(row));
+}
+
+/* ---------- Страница "показать всё" (грид плиток курсов ИЛИ категорий) ---------- */
+/* items передаются уже в нужном порядке (не пересортировываем — иначе "Новинки"
+   потеряют сортировку по дате при разворачивании в грид) */
+function openGridDetail(title, items, tileBuilder){
+  const grid = $('#categoryDetailGrid');
+  const titleEl = $('#categoryDetailTitle');
+  if (!grid || !titleEl) return;
+
+  titleEl.textContent = title;
+  grid.innerHTML = '';
+
+  if (!items || items.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.innerHTML = `<p class="empty-state-title">Пока пусто</p>`;
+    grid.appendChild(empty);
+  } else {
+    items.forEach(it => grid.appendChild(tileBuilder(it)));
+  }
+
+  $all('.page').forEach(p => p.classList.remove('active'));
+  $('#page-category-detail').classList.add('active');
+  document.body.classList.add('category-detail-active');
+  $all('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.target === 'page-catalog'));
+  window.scrollTo(0, 0);
+}
+
+/* Клик по плитке конкретной категории (автор/тема) — грид всех её курсов, по алфавиту */
+function openCategoryDetail(cat){
+  const courses = STATE.courses
+    .filter(c => (c.category_ids || []).includes(cat.id))
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+  openGridDetail(cat.name, courses, buildCourseTile);
+}
+
+function closeCategoryDetail(){
+  document.body.classList.remove('category-detail-active');
+  $('#page-category-detail').classList.remove('active');
+  $all('.page').forEach(p => p.classList.remove('active'));
+  $('#page-catalog').classList.add('active');
+  $all('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.target === 'page-catalog'));
+  window.scrollTo(0, 0);
+}
+
 function renderCatalog(){
+  const homeRowsEl = $('#homeRows');
+  const searchResultsEl = $('#searchResults');
+
+  if (isHomeMode()) {
+    if (searchResultsEl) searchResultsEl.style.display = 'none';
+    if (homeRowsEl) homeRowsEl.style.display = '';
+    renderHomeRows();
+    return;
+  }
+  if (homeRowsEl) homeRowsEl.style.display = 'none';
+  if (searchResultsEl) searchResultsEl.style.display = '';
+
   const list = filterCourses();
   const coursesWrap = $('#courses');
   coursesWrap.innerHTML = '';
@@ -1030,10 +1339,16 @@ $all('.nav-item').forEach(n=>{
       document.body.classList.remove('profile-page-active');
       document.body.classList.remove('leaderboard-page-active');
     }
+    document.body.classList.remove('category-detail-active');
     window.scrollTo(0,0);
   });
 });
 
+/* страница категории: кнопка "назад" */
+const categoryDetailBackBtn = $('#categoryDetailBack');
+if (categoryDetailBackBtn) {
+  categoryDetailBackBtn.addEventListener('click', closeCategoryDetail);
+}
 
 /* promo open */
 function openPromo(){ window.location.href = 'promo.html'; }
