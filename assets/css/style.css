@@ -662,7 +662,14 @@ body {
 
 .category-tile .cover-tile-media {
   aspect-ratio: 1 / 1;
+}
+
+.category-tile--round .cover-tile-media {
   border-radius: 50%;
+}
+
+.category-tile--rect .cover-tile-media {
+  border-radius: var(--radius-sm);
 }
 
 /* ——— Страница категории (грид плиток) ——— */
@@ -702,6 +709,28 @@ body {
   font-weight: 700;
 }
 
+/* Заголовок при "проваливании" в конкретную категорию/автора (openCategoryDetail) —
+   центрируем и слегка выделяем градиентом-плашкой, в отличие от обычных списковых
+   заголовков вида "Топ авторов"/"Новинки", которые остаются как раньше (слева, простым текстом) */
+.category-detail-header--emphasized {
+  display: grid;
+  grid-template-columns: 40px 1fr 40px;
+  align-items: center;
+}
+
+.category-detail-header--emphasized .category-detail-title {
+  grid-column: 2;
+  justify-self: center;
+  max-width: 100%;
+  font-size: 1.2rem;
+  padding: 6px 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.18), rgba(var(--accent-rgb), 0.05));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .category-detail-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -709,8 +738,13 @@ body {
   padding: 4px 16px 24px;
 }
 
-.category-detail-grid .course-tile {
+.category-detail-grid .course-tile,
+.category-detail-grid .category-tile--rect {
   width: auto;
+}
+
+.category-detail-grid .category-tile--round {
+  justify-self: center;
 }
 
 body.category-detail-active .topbar,

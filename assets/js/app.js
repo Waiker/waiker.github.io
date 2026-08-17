@@ -380,7 +380,8 @@ function buildCourseTile(course){
 
 function buildCategoryTile(cat){
   const tile = document.createElement('div');
-  tile.className = 'category-tile';
+  // авторы — круглый аватар (как у людей в стриминговых сервисах), темы/остальное — прямоугольная плитка
+  tile.className = 'category-tile ' + (cat.type === 'instructor' ? 'category-tile--round' : 'category-tile--rect');
 
   const cover = buildCoverEl(cat.cover_image, 'cat-' + cat.id, shortLabel(cat.name));
 
@@ -492,13 +493,15 @@ function renderHomeRows(){
 /* ---------- Страница "показать всё" (грид плиток курсов ИЛИ категорий) ---------- */
 /* items передаются уже в нужном порядке (не пересортировываем — иначе "Новинки"
    потеряют сортировку по дате при разворачивании в грид) */
-function openGridDetail(title, items, tileBuilder){
+function openGridDetail(title, items, tileBuilder, emphasizeTitle){
   const grid = $('#categoryDetailGrid');
   const titleEl = $('#categoryDetailTitle');
+  const headerEl = $('.category-detail-header');
   if (!grid || !titleEl) return;
 
   titleEl.textContent = title;
   grid.innerHTML = '';
+  if (headerEl) headerEl.classList.toggle('category-detail-header--emphasized', !!emphasizeTitle);
 
   if (!items || items.length === 0) {
     const empty = document.createElement('div');
@@ -522,7 +525,7 @@ function openCategoryDetail(cat){
     .filter(c => (c.category_ids || []).includes(cat.id))
     .slice()
     .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
-  openGridDetail(cat.name, courses, buildCourseTile);
+  openGridDetail(cat.name, courses, buildCourseTile, true);
 }
 
 function closeCategoryDetail(){
