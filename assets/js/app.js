@@ -25,6 +25,7 @@ let profileEditMode = false; /* true = показывать форму реда�
 let STATE = {
   courses: [],
   categories: [],
+  collections: [],
   activeCategory: null,
   query: '',
   catalogFilter: 'all', /* 'all' | 'bookmarks' | 'watched' */
@@ -106,6 +107,13 @@ async function loadData(){
       created_at: c.created_at || null,
       xp: (c.xp != null && c.xp !== '') ? parseInt(c.xp, 10) : 100
     }));
+    STATE.collections = (data.collections || []).map(col => ({
+      id: String(col.id),
+      name: col.name,
+      cover_image: col.cover_image || null,
+      sort_order: (col.sort_order != null && col.sort_order !== '') ? parseInt(col.sort_order, 10) : null,
+      course_ids: (col.course_ids || []).map(String)
+    })).sort((a, b) => (a.sort_order ?? 999999) - (b.sort_order ?? 999999));
     await userInit();
     renderAll();
     applyAuthorDeepLink();
@@ -217,6 +225,16 @@ function loadMockData(){
       });
     }
   });
+
+  // мок-подборка для локального теста нового ряда "кастомные подборки"
+  const pickedCourseIds = STATE.courses.slice(0, 8).map(c => c.id);
+  STATE.collections = pickedCourseIds.length ? [{
+    id: 'mock-coll-1',
+    name: 'Выбор редакции',
+    cover_image: null,
+    sort_order: 0,
+    course_ids: pickedCourseIds
+  }] : [];
 
   userInit().then(()=> { renderAll(); applyAuthorDeepLink(); });
 }
@@ -473,6 +491,16 @@ function renderHomeRows(){
   tagCategories.forEach(tag => {
     const courses = STATE.courses.filter(c => (c.category_ids || []).includes(tag.id));
     const row = buildHomeRow(tag.name, courses.slice(0, HOME_ROW_PREVIEW_LIMIT), buildCourseTile, courses);
+    if (row) rows.push(row);
+  });
+
+  // кастомные подборки владельца (админка → "Подборки"), в заданном им порядке —
+  // рендерятся последними, в самом низу главной, после всех стандартных рядов
+  (STATE.collections || []).forEach(col => {
+    const items = (col.course_ids || [])
+      .map(id => STATE.courses.find(c => c.id === id))
+      .filter(Boolean);
+    const row = buildHomeRow(col.name, items.slice(0, HOME_ROW_PREVIEW_LIMIT), buildCourseTile, items);
     if (row) rows.push(row);
   });
 
