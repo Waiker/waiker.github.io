@@ -1384,10 +1384,56 @@ if (categoryDetailBackBtn) {
 /* promo open */
 function openPromo(){ window.location.href = 'promo.html'; }
 
+/* ---------- Ручной проброс вертикального скролла из горизонтальных каруселей ----------
+   После tg.disableVerticalSwipes() (см. index.html — без него на главной свайп вниз
+   закрывал мини-апп) в iOS-клиенте Telegram вертикальный тач, начавшийся внутри
+   overflow-x:auto контейнера (баннер-карусель, ряды подборок), вообще никем не
+   подхватывается: раньше его ловил системный жест "закрыть" и хоть как-то передавал
+   движение странице, теперь этот жест выключен, а нативный горизонтальный
+   UIScrollView вертикальную составляющую отдавать странице не умеет — скролл
+   намертво замирает прямо на каруселях (и даже в промежутках между плитками внутри
+   ряда, потому что это один сплошной горизонтальный scroll-контейнер). Прокидываем
+   вертикальный скролл вручную через JS: как только жест определился как
+   преимущественно вертикальный — двигаем document.scrollingElement.scrollTop сами. */
+function initCarouselVerticalPassThrough(){
+  const SCROLLER_SELECTOR = '.home-row-scroller, #banner-carousel';
+  let axis = null;       // null = тач не в карусели; 'pending' = в карусели, направление ещё не ясно; 'x'/'y' = определилось
+  let lastY = 0, startX = 0, startY = 0;
+
+  document.addEventListener('touchstart', (e)=>{
+    axis = null;
+    if (e.touches.length !== 1 || !e.target.closest(SCROLLER_SELECTOR)) return;
+    axis = 'pending';
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    lastY = startY;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e)=>{
+    if (axis === null || e.touches.length !== 1) return;
+    const x = e.touches[0].clientX, y = e.touches[0].clientY;
+    if (axis === 'pending') {
+      const dx = x - startX, dy = y - startY;
+      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return; // направление пока не ясно
+      axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    }
+    if (axis === 'y') {
+      e.preventDefault(); // не даём карусели дёрнуться вбок, скроллим страницу сами
+      document.scrollingElement.scrollTop += (lastY - y);
+    }
+    lastY = y;
+  }, { passive: false });
+
+  function reset(){ axis = null; }
+  document.addEventListener('touchend', reset, { passive: true });
+  document.addEventListener('touchcancel', reset, { passive: true });
+}
+
 /* init */
 window.addEventListener('DOMContentLoaded', ()=>{
   // init UI
   initTheme();
+  initCarouselVerticalPassThrough();
   $('#countInfo').textContent = 'Загрузка...';
   loadData();
 });
