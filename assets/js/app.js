@@ -1394,19 +1394,59 @@ function openPromo(){ window.location.href = 'promo.html'; }
    намертво замирает прямо на каруселях (и даже в промежутках между плитками внутри
    ряда, потому что это один сплошной горизонтальный scroll-контейнер). Прокидываем
    вертикальный скролл вручную через JS: как только жест определился как
-   преимущественно вертикальный — двигаем document.scrollingElement.scrollTop сами. */
+   преимущественно вертикальный — двигаем document.scrollingElement.scrollTop сами.
+
+   Два усложнения по сравнению с "в лоб" (scrollTop += delta на каждый touchmove),
+   без них скролл был рывками и без инерции:
+   1) накопление дельты + применение раз за requestAnimationFrame — на каждый
+      touchmove делать scrollTop += ... синхронно нельзя, iOS шлёт их пачками
+      чаще, чем идёт отрисовка, и каждое присваивание — это лишний reflow,
+      отсюда рывки;
+   2) лёгкая инерция (momentum) на touchend по скорости последних тачмувов —
+      без неё скролл останавливается ровно там, где отпустили палец, что на
+      фоне привычного нативного инерционного скролла ощущается как "медленно". */
 function initCarouselVerticalPassThrough(){
   const SCROLLER_SELECTOR = '.home-row-scroller, #banner-carousel';
   let axis = null;       // null = тач не в карусели; 'pending' = в карусели, направление ещё не ясно; 'x'/'y' = определилось
   let lastY = 0, startX = 0, startY = 0;
+  let pendingDelta = 0, flushRaf = null;
+  let velocity = 0, lastMoveTime = 0; // px/мс, для инерции
+  let momentumRaf = null;
+
+  function stopMomentum(){ if (momentumRaf){ cancelAnimationFrame(momentumRaf); momentumRaf = null; } }
+
+  function flush(){
+    flushRaf = null;
+    if (pendingDelta !== 0) {
+      document.scrollingElement.scrollTop += pendingDelta;
+      pendingDelta = 0;
+    }
+  }
+  function scheduleFlush(){ if (flushRaf === null) flushRaf = requestAnimationFrame(flush); }
+
+  function startMomentum(){
+    let v = velocity; // px/мс на момент отпускания
+    if (Math.abs(v) < 0.02) return;
+    let last = performance.now();
+    function step(now){
+      const dt = Math.min(48, now - last); last = now;
+      document.scrollingElement.scrollTop += v * dt;
+      v *= Math.pow(0.94, dt / 16); // затухание, ~как нативный momentum
+      momentumRaf = (Math.abs(v) > 0.01) ? requestAnimationFrame(step) : null;
+    }
+    momentumRaf = requestAnimationFrame(step);
+  }
 
   document.addEventListener('touchstart', (e)=>{
     axis = null;
+    stopMomentum();
     if (e.touches.length !== 1 || !e.target.closest(SCROLLER_SELECTOR)) return;
     axis = 'pending';
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
     lastY = startY;
+    lastMoveTime = performance.now();
+    velocity = 0;
   }, { passive: true });
 
   document.addEventListener('touchmove', (e)=>{
@@ -1419,12 +1459,21 @@ function initCarouselVerticalPassThrough(){
     }
     if (axis === 'y') {
       e.preventDefault(); // не даём карусели дёрнуться вбок, скроллим страницу сами
-      document.scrollingElement.scrollTop += (lastY - y);
+      const now = performance.now();
+      const dt = Math.max(1, now - lastMoveTime);
+      const dy = lastY - y;
+      velocity = dy / dt;
+      pendingDelta += dy;
+      scheduleFlush();
+      lastMoveTime = now;
     }
     lastY = y;
   }, { passive: false });
 
-  function reset(){ axis = null; }
+  function reset(){
+    if (axis === 'y') startMomentum();
+    axis = null;
+  }
   document.addEventListener('touchend', reset, { passive: true });
   document.addEventListener('touchcancel', reset, { passive: true });
 }
