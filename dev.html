@@ -26,6 +26,13 @@
 </head>
 <body>
 
+  <!-- pageScroll: обёртка над "живым" содержимым страницы (всё, кроме fixed-элементов —
+       тоста, модалок и нижней навигации, которые остаются её соседями, а не потомками).
+       Используется JS-скроллом каруселей (initCarouselVerticalPassThrough в app.js) для
+       GPU-композитного переноса вертикального свайпа с горизонтальной карусели в реальный
+       scrollTop страницы без единого reflow во время самого жеста. -->
+  <div id="pageScroll">
+
   <!-- header with compact search -->
   <div class="topbar">
     <div class="search-wrap">
@@ -195,6 +202,8 @@
     </section>
 
   </main>
+
+  </div><!-- /#pageScroll -->
 
   <div id="toast"></div>
 
