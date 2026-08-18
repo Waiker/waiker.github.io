@@ -63,6 +63,10 @@ html, body {
   height: 100%;
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  /* Страхуем скролл страницы от "резинового" оттягивания на границах —
+     на iOS этот bounce-эффект в WebView Telegram может дополнительно
+     провоцировать системный жест "свайп вниз = свернуть мини-апп". */
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -184,6 +188,10 @@ body {
   scrollbar-width: none;
   -ms-overflow-style: none;
   position: relative;
+  /* Явно говорим браузеру/WebView: этот элемент отвечает только за горизонтальный
+     скролл, вертикальный свайп через него не перехватывается — иначе Telegram
+     иногда путает направление и ловит вертикальный свайп как жест закрытия. */
+  touch-action: pan-x;
 }
 
 #banner-carousel::-webkit-scrollbar {
@@ -570,6 +578,7 @@ body {
   gap: 12px;
   width: 100%;
   min-width: 0;
+  touch-action: pan-x;
   overflow-x: auto;
   padding-bottom: 4px;
   scroll-snap-type: x proximity;

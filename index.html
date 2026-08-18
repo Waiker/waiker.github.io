@@ -14,8 +14,17 @@
   <script>
     const tg = window.Telegram.WebApp;
     tg.ready();
+    tg.expand();
     if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
       tg.BackButton.hide();
+    }
+    // Отключаем системный жест "свайп вниз = свернуть/закрыть мини-апп".
+    // Без этого на главной, где есть горизонтальные скроллеры (баннер-карусель
+    // и ряды подборок), Telegram иногда путает вертикальный свайп с горизонтальным
+    // скроллом ряда и перехватывает его как жест закрытия — на остальных страницах
+    // (Участники/Профиль), где горизонтальных скроллеров нет, эта путаница не возникает.
+    if (tg.isVersionAtLeast && tg.isVersionAtLeast('7.7') && typeof tg.disableVerticalSwipes === 'function') {
+      tg.disableVerticalSwipes();
     }
   </script>
 </head>

@@ -15,8 +15,12 @@
   <script>
     const tg = window.Telegram.WebApp;
     tg.ready();
+    tg.expand();
     if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
       tg.BackButton.hide();
+    }
+    if (tg.isVersionAtLeast && tg.isVersionAtLeast('7.7') && typeof tg.disableVerticalSwipes === 'function') {
+      tg.disableVerticalSwipes();
     }
   </script>
 </head>
