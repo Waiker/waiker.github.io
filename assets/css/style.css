@@ -188,10 +188,13 @@ body {
   scrollbar-width: none;
   -ms-overflow-style: none;
   position: relative;
-  /* Явно говорим браузеру/WebView: этот элемент отвечает только за горизонтальный
-     скролл, вертикальный свайп через него не перехватывается — иначе Telegram
-     иногда путает направление и ловит вертикальный свайп как жест закрытия. */
-  touch-action: pan-x;
+  /* pan-x + pan-y (а не только pan-x!) — разрешаем браузеру распознавать оба
+     направления жеста на этом элементе, как и раньше, просто без pinch-zoom.
+     Один pan-x запрещал вертикальный свайп прямо на карусели — тогда листать
+     страницу можно было только "между" элементами, это неудобно. Основная
+     защита от system-жеста закрытия мини-аппа — tg.disableVerticalSwipes()
+     в index.html, а не эта подсказка. */
+  touch-action: pan-x pan-y;
 }
 
 #banner-carousel::-webkit-scrollbar {
@@ -578,7 +581,7 @@ body {
   gap: 12px;
   width: 100%;
   min-width: 0;
-  touch-action: pan-x;
+  touch-action: pan-x pan-y;
   overflow-x: auto;
   padding-bottom: 4px;
   scroll-snap-type: x proximity;
