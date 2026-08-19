@@ -1384,151 +1384,26 @@ if (categoryDetailBackBtn) {
 /* promo open */
 function openPromo(){ window.location.href = 'promo.html'; }
 
-/* ---------- Ручной проброс вертикального скролла из горизонтальных каруселей ----------
+/* ---------- Вертикальный скролл из горизонтальных каруселей ----------
    После tg.disableVerticalSwipes() (см. index.html — без него на главной свайп вниз
-   закрывал мини-апп) в iOS-клиенте Telegram вертикальный тач, начавшийся внутри
-   overflow-x:auto контейнера (баннер-карусель, ряды подборок), вообще никем не
-   подхватывается: раньше его ловил системный жест "закрыть" и хоть как-то передавал
-   движение странице, теперь этот жест выключен, а нативный горизонтальный
-   UIScrollView вертикальную составляющую отдавать странице не умеет — скролл
-   намертво замирает прямо на каруселях (и даже в промежутках между плитками внутри
-   ряда, потому что это один сплошной горизонтальный scroll-контейнер).
+   закрывал мини-апп) вертикальный тач, начавшийся внутри горизонтальных каруселей
+   (баннер, ряды подборок), нативно никем не подхватывается — скролл страницы там
+   не работает, нужно попадать пальцем между каруселями.
 
-   Первые версии этого фикса дёргали document.scrollingElement.scrollTop прямо на
-   каждый touchmove (или накопленной пачкой раз в requestAnimationFrame) — визуально
-   рывками и медленно. Причина фундаментальная, а не в качестве батчинга: scrollTop
-   и на чтение, и на запись форсирует синхронный layout на главном потоке, а
-   touchmove у нас obязательно non-passive (иначе e.preventDefault() не сработает) —
-   браузер обязан ждать возврата из JS-обработчика, прежде чем решить, скроллить ли
-   вообще. Сколько ни батчи такие записи через rAF, они остаются layout-thrashing'ом
-   и не сравнятся с нативным скроллом на compositor-потоке.
-
-   Правильный путь — тот же, которым в своё время делали "родной на ощупь" кастомный
-   скролл библиотеки вроде iScroll: во время самого жеста (drag + инерция после
-   отпускания) двигаем не scrollTop, а CSS transform: translateY() на обёртке
-   #pageScroll — это чисто композитная GPU-операция, без layout вообще. А накопленное
-   смещение переносим в реальный scrollTop ОДНИМ синхронным присваиванием — только в
-   момент, когда жест/инерция завершились (или прерваны новым тачем), и в тот же кадр
-   сбрасываем transform в 0, так что визуально это незаметно (один re-layout вместо
-   десятков за жест). #pageScroll — сосед fixed-элементов (тост, модалки,
-   .bottom-nav), а не их предок, поэтому transform на нём не задевает position:fixed
-   у них (transform на предке становится containing block для fixed-потомков — важно
-   было не завернуть их тоже). */
-function initCarouselVerticalPassThrough(){
-  const SCROLLER_SELECTOR = '.home-row-scroller, #banner-carousel';
-  const proxy = document.getElementById('pageScroll');
-  if (!proxy) return; // без обёртки — не мешаем нативному (пусть даже сломанному) поведению
-
-  let axis = null;         // null = тач не в карусели; 'pending' = в карусели, ось ещё не ясна; 'x'/'y' = определилось
-  let startX = 0, startY = 0, lastY = 0, lastT = 0;
-  let dragPx = 0;           // накопленное смещение пальца по Y с начала жеста, ещё не закоммиченное в scrollTop
-  let velocity = 0;         // px/мс движения пальца, для инерции
-  let maxScrollTop = 0;
-  let momentumRaf = null;
-
-  function scrollMax(){
-    const se = document.scrollingElement;
-    return Math.max(0, se.scrollHeight - se.clientHeight);
-  }
-
-  function setTransform(px){
-    proxy.style.transform = px ? `translateY(${px}px)` : '';
-  }
-
-  // Переносим накопленный drag в реальный scrollTop одним присваиванием и убираем
-  // transform — обе операции в одном месте кода, без промежуточного кадра отрисовки
-  // между ними, поэтому визуально контент не "прыгает".
-  function commit(){
-    if (dragPx) {
-      const se = document.scrollingElement;
-      const next = Math.max(0, Math.min(scrollMax(), se.scrollTop - dragPx));
-      se.scrollTop = next;
-    }
-    setTransform(0);
-    dragPx = 0;
-    proxy.classList.remove('is-scroll-dragging');
-  }
-
-  function stopMomentum(){ if (momentumRaf){ cancelAnimationFrame(momentumRaf); momentumRaf = null; } }
-
-  document.addEventListener('touchstart', (e)=>{
-    if (momentumRaf) { stopMomentum(); commit(); } // новый тач посреди инерции — фиксируем текущее положение
-    axis = null;
-    if (e.touches.length !== 1 || !e.target.closest(SCROLLER_SELECTOR)) return;
-    axis = 'pending';
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-    lastY = startY;
-    lastT = performance.now();
-    velocity = 0;
-    maxScrollTop = scrollMax();
-  }, { passive: true });
-
-  document.addEventListener('touchmove', (e)=>{
-    if (axis === null || e.touches.length !== 1) return;
-    const x = e.touches[0].clientX, y = e.touches[0].clientY;
-    if (axis === 'pending') {
-      const dx = x - startX, dy = y - startY;
-      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return; // направление пока не ясно
-      axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
-      if (axis === 'y') {
-        proxy.classList.add('is-scroll-dragging');
-        lastY = y; lastT = performance.now();
-      }
-    }
-    if (axis === 'y') {
-      e.preventDefault(); // не даём карусели дёрнуться вбок, скроллим страницу сами
-      const now = performance.now();
-      const dt = Math.max(1, now - lastT);
-      let fingerDy = y - lastY; // сырое смещение пальца (вниз — положительное)
-      lastY = y; lastT = now;
-      velocity = fingerDy / dt;
-
-      // Резина на границах контента: гасим прирост, если реальный scrollTop с учётом
-      // ещё не закоммиченного dragPx уже вышел бы за [0, maxScrollTop].
-      const se = document.scrollingElement;
-      const virtualScrollTop = se.scrollTop - dragPx;
-      const projected = virtualScrollTop - fingerDy;
-      if (projected < 0 || projected > maxScrollTop) fingerDy *= 0.35;
-
-      dragPx += fingerDy;
-      setTransform(dragPx); // GPU-композитная перерисовка, без layout
-    }
-  }, { passive: false });
-
-  function startMomentum(){
-    let v = velocity;
-    if (Math.abs(v) < 0.02) { commit(); return; }
-    let last = performance.now();
-    function step(now){
-      const dt = Math.min(48, now - last); last = now;
-      dragPx += v * dt;
-      v *= Math.pow(0.94, dt / 16); // затухание, ~как нативный momentum
-      setTransform(dragPx);
-      if (Math.abs(v) > 0.015) {
-        momentumRaf = requestAnimationFrame(step);
-      } else {
-        momentumRaf = null;
-        commit();
-      }
-    }
-    momentumRaf = requestAnimationFrame(step);
-  }
-
-  function reset(){
-    if (axis === 'y') startMomentum();
-    else if (dragPx) commit();
-    axis = null;
-  }
-  document.addEventListener('touchend', reset, { passive: true });
-  document.addEventListener('touchcancel', reset, { passive: true });
-}
+   Пробовали перехватывать его вручную через JS (scrollTop по каждому touchmove,
+   потом rAF-батчинг с инерцией, потом CSS transform-прокси с переносом в scrollTop
+   по окончании жеста) — во всех вариантах результат на реальном устройстве был хуже
+   родного поведения: рывки либо (в варианте с transform) визуальные "пляски"
+   position:sticky-шапки с поиском, потому что WebKit на iOS пересчитывает sticky
+   относительно анимируемого через transform предка не синхронно с композитингом.
+   Решили не изобретать очередной костыль поверх нативного скролла — оставили как
+   есть: свайп вниз не закрывает мини-апп (это главное), а скролл каруселей — из
+   промежутков между ними, как в обычном overflow-x:auto без хаков. */
 
 /* init */
 window.addEventListener('DOMContentLoaded', ()=>{
   // init UI
   initTheme();
-  initCarouselVerticalPassThrough();
   $('#countInfo').textContent = 'Загрузка...';
   loadData();
 });

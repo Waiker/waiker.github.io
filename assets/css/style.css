@@ -79,13 +79,6 @@ body {
   font-size: 16px;
 }
 
-/* Обёртка над содержимым страницы — см. комментарий рядом с #pageScroll в html.
-   will-change выставляется только на время активного жеста/инерции (класс
-   добавляется и снимается из JS), чтобы не держать лишний composited-слой всё время. */
-#pageScroll.is-scroll-dragging {
-  will-change: transform;
-}
-
 /* ——— Topbar & Search ——— */
 .topbar {
   position: sticky;
