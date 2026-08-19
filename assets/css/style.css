@@ -1196,6 +1196,177 @@ body.profile-page-active .container {
   cursor: pointer;
 }
 
+/* ——— Paywall: полноэкранный продающий экран ——— */
+.paywall-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: none; /* flex — включается из JS (showPaywall) */
+  flex-direction: column;
+  background: var(--bg);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.paywall-close-btn {
+  position: absolute;
+  top: calc(16px + env(safe-area-inset-top));
+  right: 16px;
+  z-index: 2001;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.paywall-hero {
+  position: relative;
+  flex: 0 0 auto;
+  padding: calc(64px + env(safe-area-inset-top)) 24px 36px;
+  text-align: center;
+  color: #fff;
+  background:
+    radial-gradient(120% 100% at 50% -10%, rgba(var(--accent-rgb), 0.55) 0%, rgba(var(--accent-rgb), 0) 60%),
+    linear-gradient(160deg, #1b2a4d 0%, #101a30 100%);
+  border-radius: 0 0 28px 28px;
+}
+
+.paywall-hero-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffd76a, #f5a623);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: #4a3300;
+  box-shadow: 0 8px 24px rgba(245, 166, 35, 0.4);
+}
+
+.paywall-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0 0 8px;
+}
+
+.paywall-subtitle {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.78);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.paywall-body {
+  flex: 1;
+  padding: 24px 20px calc(28px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.paywall-benefits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.paywall-benefit {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  box-shadow: var(--shadow);
+}
+
+.paywall-benefit-icon {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  margin-top: 2px;
+}
+
+.paywall-benefit-text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  padding-top: 6px;
+}
+
+.paywall-benefit-text strong {
+  display: block;
+  color: var(--text);
+  font-size: 0.92rem;
+  margin-bottom: 2px;
+}
+
+.paywall-price-card {
+  text-align: center;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+
+.paywall-price-value {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.paywall-cta-btn {
+  width: 100%;
+  padding: 15px 18px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(var(--accent-rgb), 0.35);
+  transition: transform 0.1s ease;
+}
+
+.paywall-cta-btn:active {
+  transform: scale(0.98);
+}
+
+.paywall-later-btn {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
 .profile-progress-card {
   background: var(--tag-bg);
   border-radius: var(--radius);

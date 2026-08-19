@@ -209,6 +209,26 @@
     </div>
   </div>
 
+  <!-- Paywall: полноэкранный продающий экран для пользователей без активной подписки.
+       Показывается на старте через checkGlobalAccessAndMaybeShowPaywall() в app.js —
+       см. комментарий там про периодичность показа. -->
+  <div id="paywallScreen" class="paywall-screen" role="dialog" aria-hidden="true" style="display:none">
+    <button type="button" id="paywallCloseBtn" class="paywall-close-btn" aria-label="Закрыть"><i class="fa-solid fa-times"></i></button>
+    <div class="paywall-hero">
+      <div class="paywall-hero-icon"><i class="fa-solid fa-crown"></i></div>
+      <h1 class="paywall-title">Открой полный доступ</h1>
+      <p class="paywall-subtitle">Доступ без ограничений вместе с закрытым клубом</p>
+    </div>
+    <div class="paywall-body">
+      <ul class="paywall-benefits" id="paywallBenefits"></ul>
+      <div class="paywall-price-card">
+        <span class="paywall-price-value" id="paywallPriceValue">600 ₽ / мес</span>
+      </div>
+      <button type="button" id="paywallCtaBtn" class="paywall-cta-btn">Подключить Плюс</button>
+      <button type="button" id="paywallLaterBtn" class="paywall-later-btn">Продолжить бесплатно</button>
+    </div>
+  </div>
+
   <nav class="bottom-nav" role="navigation">
     <div class="nav-item active" data-target="page-catalog"><i class="fa-solid fa-book"></i>Каталог</div>
     <div class="nav-item" data-target="page-leaderboard"><i class="fa-solid fa-users"></i>Участники</div>

@@ -1400,10 +1400,112 @@ function openPromo(){ window.location.href = 'promo.html'; }
    есть: свайп вниз не закрывает мини-апп (это главное), а скролл каруселей — из
    промежутков между ними, как в обычном overflow-x:auto без хаков. */
 
+/* ---------- Paywall: продающий экран для пользователей без активной подписки ----------
+   На старте (если открыто внутри Telegram) один раз проверяем доступ через тот же
+   check_access.php, что и на клике по курсу (членство в закрытом Telegram-клубе;
+   course_id туда не передаём — эта ручка и без него проверяет just membership).
+   Если доступа нет — показываем полноэкранный продающий экран. Пользователь может
+   закрыть его и пользоваться каталогом бесплатно (курсы по-прежнему проверяются
+   индивидуально через handleCourseClick/showAccessModal) — чтобы не быть навязчивым,
+   повторно показываем не чаще, чем раз в PAYWALL_REPEAT_INTERVAL_MS. */
+const KEY_PAYWALL_LAST_SHOWN = 'paywallLastShownAt';
+const PAYWALL_REPEAT_INTERVAL_MS = 24 * 60 * 60 * 1000; // раз в сутки — легко поменять
+
+// ЗАГЛУШКА: замените на реальные преимущества подписки — иконки см. Font Awesome
+// (уже подключён в head), названия классов вида 'fa-solid fa-xxx'.
+const PAYWALL_BENEFITS = [
+  { icon: 'fa-solid fa-video',   title: 'Все курсы каталога',        text: 'Полный доступ ко всем текущим и новым курсам без ограничений.' },
+  { icon: 'fa-solid fa-bolt',    title: 'Новый контент регулярно', text: 'Библиотека курсов регулярно пополняется свежими занятиями.' }
+];
+
+// Ссылка кнопки "Подключить Плюс" — оплата через Tribute.
+const PAYWALL_CTA_URL = 'https://t.me/tribute/app?startapp=s6k6';
+
+function shouldShowPaywall(){
+  const last = parseInt(localStorage.getItem(KEY_PAYWALL_LAST_SHOWN) || '0', 10);
+  return (Date.now() - last) > PAYWALL_REPEAT_INTERVAL_MS;
+}
+
+function openExternalLink(url){
+  if (!url) return;
+  try {
+    if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openTelegramLink === 'function') {
+      window.Telegram.WebApp.openTelegramLink(url);
+    } else {
+      window.open(url, '_blank');
+    }
+  } catch (e) {
+    window.open(url, '_blank');
+  }
+}
+
+function renderPaywallBenefits(){
+  const list = document.getElementById('paywallBenefits');
+  if (!list) return;
+  list.innerHTML = '';
+  PAYWALL_BENEFITS.forEach(b=>{
+    const li = document.createElement('li');
+    li.className = 'paywall-benefit';
+    li.innerHTML =
+      '<span class="paywall-benefit-icon"><i class="' + escapeHtml(b.icon) + '"></i></span>' +
+      '<span class="paywall-benefit-text"><strong>' + escapeHtml(b.title) + '</strong>' + escapeHtml(b.text) + '</span>';
+    list.appendChild(li);
+  });
+}
+
+function showPaywall(){
+  const screen = document.getElementById('paywallScreen');
+  if (!screen) return;
+  renderPaywallBenefits();
+  screen.style.display = 'flex';
+  screen.setAttribute('aria-hidden', 'false');
+  localStorage.setItem(KEY_PAYWALL_LAST_SHOWN, String(Date.now()));
+}
+
+function hidePaywall(){
+  const screen = document.getElementById('paywallScreen');
+  if (!screen) return;
+  screen.style.display = 'none';
+  screen.setAttribute('aria-hidden', 'true');
+}
+
+function initPaywall(){
+  const closeBtn = document.getElementById('paywallCloseBtn');
+  const laterBtn = document.getElementById('paywallLaterBtn');
+  const ctaBtn = document.getElementById('paywallCtaBtn');
+  if (closeBtn) closeBtn.addEventListener('click', hidePaywall);
+  if (laterBtn) laterBtn.addEventListener('click', hidePaywall);
+  if (ctaBtn) ctaBtn.addEventListener('click', ()=> openExternalLink(PAYWALL_CTA_URL));
+}
+
+async function checkGlobalAccessAndMaybeShowPaywall(){
+  const initData = getInitData();
+  if (!initData) return; // вне Telegram-контекста — как и остальные access-проверки, не показываем
+  if (!shouldShowPaywall()) return;
+  try {
+    const res = await fetch(ACCESS_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: initData })
+    });
+    let data = null;
+    try { data = await res.json(); } catch(e) {}
+    if (res.ok && data && data.allowed === false) {
+      showPaywall();
+    }
+    // allowed === true или сбой сети/сервера — молча ничего не показываем (fail-open,
+    // чтобы проблема с бэкендом не блокировала каталог для настоящих подписчиков).
+  } catch (e) {
+    console.error('checkGlobalAccessAndMaybeShowPaywall error', e);
+  }
+}
+
 /* init */
 window.addEventListener('DOMContentLoaded', ()=>{
   // init UI
   initTheme();
+  initPaywall();
+  checkGlobalAccessAndMaybeShowPaywall();
   $('#countInfo').textContent = 'Загрузка...';
   loadData();
 });
