@@ -19,21 +19,23 @@
     if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
       tg.BackButton.hide();
     }
-    // Тактильная отдача сразу при открытии мини-аппа — мягкая волна из нескольких
-    // затухающих импульсов, см. подробный комментарий в index.html.
+    // Тактильная отдача при открытии мини-аппа — волна из повторяющихся импульсов,
+    // идущая пока грузятся данные, останавливается сама (window.__launchHapticActive),
+    // см. подробный комментарий в index.html.
     try {
       if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1') && tg.HapticFeedback && typeof tg.HapticFeedback.impactOccurred === 'function') {
-        var launchHapticWave = [
-          { delay: 0,   style: 'soft'  },
-          { delay: 90,  style: 'soft'  },
-          { delay: 200, style: 'light' },
-          { delay: 340, style: 'light' }
-        ];
-        launchHapticWave.forEach(function (step) {
-          setTimeout(function () {
-            try { tg.HapticFeedback.impactOccurred(step.style); } catch (e) {}
-          }, step.delay);
-        });
+        window.__launchHapticActive = true;
+        var launchHapticStyles = ['soft', 'soft', 'light', 'light'];
+        var launchHapticMax = 18;
+        var launchHapticCount = 0;
+        var launchHapticTimer = setInterval(function () {
+          if (!window.__launchHapticActive || launchHapticCount >= launchHapticMax) {
+            clearInterval(launchHapticTimer);
+            return;
+          }
+          try { tg.HapticFeedback.impactOccurred(launchHapticStyles[launchHapticCount % launchHapticStyles.length]); } catch (e) {}
+          launchHapticCount++;
+        }, 130);
       }
     } catch (eHaptic) {}
     if (tg.isVersionAtLeast && tg.isVersionAtLeast('7.7') && typeof tg.disableVerticalSwipes === 'function') {

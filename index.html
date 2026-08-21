@@ -18,24 +18,29 @@
     if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
       tg.BackButton.hide();
     }
-    // Тактильная отдача сразу при открытии мини-аппа — не один резкий "тык", а
-    // мягкая волна из нескольких затухающих импульсов (soft -> soft -> light -> light,
-    // с растущими паузами между ними). Telegram API не даёт произвольной длительности/
-    // паттерна вибрации (только дискретные impactOccurred-стили), поэтому "волну"
-    // имитируем именно так — несколькими короткими импульсами подряд.
+    // Тактильная отдача при открытии мини-аппа — волна из повторяющихся импульсов
+    // (soft/light вперемешку), которая идёт, пока реально грузятся данные о курсах,
+    // и останавливается сама, как только они готовы (см. window.__launchHapticActive =
+    // false в hideLaunchSplash() в app.js — дёргается в момент первого renderAll()).
+    // launchHapticMax — страховка на случай, если загрузка зависнет: не даём вибрации
+    // идти бесконечно (18 импульсов по 130мс ≈ 2.3с, дальше тишина, даже если данные
+    // так и не пришли — сплэш при этом всё равно скроется по своему таймауту).
+    // Telegram API не даёт произвольной длительности/паттерна вибрации, только
+    // дискретные impactOccurred-стили, поэтому "волну" имитируем частыми импульсами.
     try {
       if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1') && tg.HapticFeedback && typeof tg.HapticFeedback.impactOccurred === 'function') {
-        var launchHapticWave = [
-          { delay: 0,   style: 'soft'  },
-          { delay: 90,  style: 'soft'  },
-          { delay: 200, style: 'light' },
-          { delay: 340, style: 'light' }
-        ];
-        launchHapticWave.forEach(function (step) {
-          setTimeout(function () {
-            try { tg.HapticFeedback.impactOccurred(step.style); } catch (e) {}
-          }, step.delay);
-        });
+        window.__launchHapticActive = true;
+        var launchHapticStyles = ['soft', 'soft', 'light', 'light'];
+        var launchHapticMax = 18;
+        var launchHapticCount = 0;
+        var launchHapticTimer = setInterval(function () {
+          if (!window.__launchHapticActive || launchHapticCount >= launchHapticMax) {
+            clearInterval(launchHapticTimer);
+            return;
+          }
+          try { tg.HapticFeedback.impactOccurred(launchHapticStyles[launchHapticCount % launchHapticStyles.length]); } catch (e) {}
+          launchHapticCount++;
+        }, 130);
       }
     } catch (eHaptic) {}
     // Отключаем системный жест "свайп вниз = свернуть/закрыть мини-апп".

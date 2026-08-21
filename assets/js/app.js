@@ -40,6 +40,7 @@ let splashHidden = false;
 function hideLaunchSplash(){
   if (splashHidden) return;
   splashHidden = true;
+  window.__launchHapticActive = false; // данные готовы — останавливаем волну вибрации (см. index.html/dev.html)
   const el = document.getElementById('launchSplash');
   if (!el) return;
   const elapsed = Date.now() - splashShownAt;
