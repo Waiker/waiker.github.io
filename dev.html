@@ -8,7 +8,7 @@
   <!-- Font Awesome (иконки) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/style.css?v=20260822a" />
   <link rel="stylesheet" href="assets/css/dev.css" />
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -19,23 +19,22 @@
     if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
       tg.BackButton.hide();
     }
-    // Тактильная отдача при открытии мини-аппа — волна из повторяющихся импульсов,
-    // идущая пока грузятся данные, останавливается сама (window.__launchHapticActive),
-    // см. подробный комментарий в index.html.
+    // Тактильная отдача при открытии мини-аппа — волна из повторяющихся ОЧЕНЬ лёгких
+    // импульсов (только 'soft'), идущая пока грузятся данные, останавливается сама
+    // (window.__launchHapticActive), см. подробный комментарий в index.html.
     try {
       if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1') && tg.HapticFeedback && typeof tg.HapticFeedback.impactOccurred === 'function') {
         window.__launchHapticActive = true;
-        var launchHapticStyles = ['soft', 'soft', 'light', 'light'];
-        var launchHapticMax = 18;
+        var launchHapticMax = 10;
         var launchHapticCount = 0;
         var launchHapticTimer = setInterval(function () {
           if (!window.__launchHapticActive || launchHapticCount >= launchHapticMax) {
             clearInterval(launchHapticTimer);
             return;
           }
-          try { tg.HapticFeedback.impactOccurred(launchHapticStyles[launchHapticCount % launchHapticStyles.length]); } catch (e) {}
+          try { tg.HapticFeedback.impactOccurred('soft'); } catch (e) {}
           launchHapticCount++;
-        }, 130);
+        }, 220);
       }
     } catch (eHaptic) {}
     if (tg.isVersionAtLeast && tg.isVersionAtLeast('7.7') && typeof tg.disableVerticalSwipes === 'function') {
@@ -267,8 +266,8 @@
     <div class="nav-item" data-target="page-profile"><i class="fa-solid fa-user"></i>Профиль</div>
   </nav>
 
-  <script src="assets/js/profile-config.js"></script>
-  <script src="assets/js/app.js"></script>
+  <script src="assets/js/profile-config.js?v=20260822a"></script>
+  <script src="assets/js/app.js?v=20260822a"></script>
 
   <!-- Отладка авторизации (раскомментировать при необходимости)
   <script>

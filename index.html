@@ -8,7 +8,7 @@
   <!-- Font Awesome (иконки) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/style.css?v=20260822a" />
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
@@ -18,29 +18,29 @@
     if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
       tg.BackButton.hide();
     }
-    // Тактильная отдача при открытии мини-аппа — волна из повторяющихся импульсов
-    // (soft/light вперемешку), которая идёт, пока реально грузятся данные о курсах,
-    // и останавливается сама, как только они готовы (см. window.__launchHapticActive =
-    // false в hideLaunchSplash() в app.js — дёргается в момент первого renderAll()).
+    // Тактильная отдача при открытии мини-аппа — волна из повторяющихся ОЧЕНЬ лёгких
+    // импульсов (только 'soft' — самый слабый стиль в HapticFeedback API), которая
+    // идёт, пока реально грузятся данные о курсах, и останавливается сама, как только
+    // они готовы (см. window.__launchHapticActive = false в hideLaunchSplash() в
+    // app.js — дёргается в момент первого renderAll()).
     // launchHapticMax — страховка на случай, если загрузка зависнет: не даём вибрации
-    // идти бесконечно (18 импульсов по 130мс ≈ 2.3с, дальше тишина, даже если данные
+    // идти бесконечно (10 импульсов по 220мс = 2.2с, дальше тишина, даже если данные
     // так и не пришли — сплэш при этом всё равно скроется по своему таймауту).
     // Telegram API не даёт произвольной длительности/паттерна вибрации, только
-    // дискретные impactOccurred-стили, поэтому "волну" имитируем частыми импульсами.
+    // дискретные impactOccurred-стили, поэтому "волну" имитируем редкими импульсами.
     try {
       if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1') && tg.HapticFeedback && typeof tg.HapticFeedback.impactOccurred === 'function') {
         window.__launchHapticActive = true;
-        var launchHapticStyles = ['soft', 'soft', 'light', 'light'];
-        var launchHapticMax = 18;
+        var launchHapticMax = 10;
         var launchHapticCount = 0;
         var launchHapticTimer = setInterval(function () {
           if (!window.__launchHapticActive || launchHapticCount >= launchHapticMax) {
             clearInterval(launchHapticTimer);
             return;
           }
-          try { tg.HapticFeedback.impactOccurred(launchHapticStyles[launchHapticCount % launchHapticStyles.length]); } catch (e) {}
+          try { tg.HapticFeedback.impactOccurred('soft'); } catch (e) {}
           launchHapticCount++;
-        }, 130);
+        }, 220);
       }
     } catch (eHaptic) {}
     // Отключаем системный жест "свайп вниз = свернуть/закрыть мини-апп".
@@ -295,8 +295,8 @@
     <div class="nav-item" data-target="page-profile"><i class="fa-solid fa-user"></i>Профиль</div>
   </nav>
 
-  <script src="assets/js/profile-config.js"></script>
-  <script src="assets/js/app.js"></script>
+  <script src="assets/js/profile-config.js?v=20260822a"></script>
+  <script src="assets/js/app.js?v=20260822a"></script>
 
   <!-- Отладка авторизации (раскомментировать при необходимости)
   <script>
