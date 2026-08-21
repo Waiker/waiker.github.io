@@ -18,12 +18,24 @@
     if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
       tg.BackButton.hide();
     }
-    // Лёгкая тактильная отдача сразу при открытии мини-аппа — просто приятный
-    // штрих "приложение ожило", без привязки к загрузке данных (см. #launchSplash
-    // ниже — тот скрывается отдельно, уже после загрузки курсов).
+    // Тактильная отдача сразу при открытии мини-аппа — не один резкий "тык", а
+    // мягкая волна из нескольких затухающих импульсов (soft -> soft -> light -> light,
+    // с растущими паузами между ними). Telegram API не даёт произвольной длительности/
+    // паттерна вибрации (только дискретные impactOccurred-стили), поэтому "волну"
+    // имитируем именно так — несколькими короткими импульсами подряд.
     try {
       if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1') && tg.HapticFeedback && typeof tg.HapticFeedback.impactOccurred === 'function') {
-        tg.HapticFeedback.impactOccurred('soft');
+        var launchHapticWave = [
+          { delay: 0,   style: 'soft'  },
+          { delay: 90,  style: 'soft'  },
+          { delay: 200, style: 'light' },
+          { delay: 340, style: 'light' }
+        ];
+        launchHapticWave.forEach(function (step) {
+          setTimeout(function () {
+            try { tg.HapticFeedback.impactOccurred(step.style); } catch (e) {}
+          }, step.delay);
+        });
       }
     } catch (eHaptic) {}
     // Отключаем системный жест "свайп вниз = свернуть/закрыть мини-апп".

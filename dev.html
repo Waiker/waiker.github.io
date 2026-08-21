@@ -19,10 +19,21 @@
     if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
       tg.BackButton.hide();
     }
-    // Лёгкая тактильная отдача сразу при открытии мини-аппа.
+    // Тактильная отдача сразу при открытии мини-аппа — мягкая волна из нескольких
+    // затухающих импульсов, см. подробный комментарий в index.html.
     try {
       if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1') && tg.HapticFeedback && typeof tg.HapticFeedback.impactOccurred === 'function') {
-        tg.HapticFeedback.impactOccurred('soft');
+        var launchHapticWave = [
+          { delay: 0,   style: 'soft'  },
+          { delay: 90,  style: 'soft'  },
+          { delay: 200, style: 'light' },
+          { delay: 340, style: 'light' }
+        ];
+        launchHapticWave.forEach(function (step) {
+          setTimeout(function () {
+            try { tg.HapticFeedback.impactOccurred(step.style); } catch (e) {}
+          }, step.delay);
+        });
       }
     } catch (eHaptic) {}
     if (tg.isVersionAtLeast && tg.isVersionAtLeast('7.7') && typeof tg.disableVerticalSwipes === 'function') {
