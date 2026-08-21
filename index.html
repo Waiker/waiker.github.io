@@ -18,6 +18,14 @@
     if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1')) {
       tg.BackButton.hide();
     }
+    // Лёгкая тактильная отдача сразу при открытии мини-аппа — просто приятный
+    // штрих "приложение ожило", без привязки к загрузке данных (см. #launchSplash
+    // ниже — тот скрывается отдельно, уже после загрузки курсов).
+    try {
+      if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.1') && tg.HapticFeedback && typeof tg.HapticFeedback.impactOccurred === 'function') {
+        tg.HapticFeedback.impactOccurred('soft');
+      }
+    } catch (eHaptic) {}
     // Отключаем системный жест "свайп вниз = свернуть/закрыть мини-апп".
     // Без этого на главной, где есть горизонтальные скроллеры (баннер-карусель
     // и ряды подборок), Telegram иногда путает вертикальный свайп с горизонтальным
@@ -29,6 +37,19 @@
   </script>
 </head>
 <body>
+
+  <!-- Стартовый сплэш: показан по умолчанию (без JS, чистый HTML/CSS — рисуется
+       мгновенно, без ожидания скриптов), скрывается из app.js после того, как
+       данные о курсах загружены и первый renderAll() отработал (см. hideLaunchSplash()).
+       Лого — картинка assets/img/logo.jpg; если файла нет/не загрузился — onerror
+       прячет <img> и показывает текстовый фолбэк рядом. -->
+  <div id="launchSplash" class="launch-splash" aria-hidden="false">
+    <div class="launch-splash-glow" aria-hidden="true"></div>
+    <div class="launch-splash-logo">
+      <img src="assets/img/logo.jpg" alt="WTF BJJ" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+      <span class="launch-splash-logo-fallback">WTF <strong>BJJ</strong></span>
+    </div>
+  </div>
 
   <!-- header with compact search -->
   <div class="topbar">

@@ -1367,6 +1367,99 @@ body.profile-page-active .container {
   cursor: pointer;
 }
 
+/* ---------- Стартовый сплэш (лёгкий прелоадер на время загрузки данных) ----------
+   Фон — фиксированный светлый градиент (не завязан на --bg/data-theme), потому что
+   тема Telegram применяется через JS уже после первой отрисовки — если использовать
+   переменные темы, при тёмной теме Telegram мог бы на долю секунды мелькнуть другой
+   фон. Так сплэш выглядит одинаково и предсказуемо всегда. Дышащее лого + мягкое
+   пульсирующее свечение позади него (для лёгкости/премиальности, без лучей и точек —
+   те убраны по фидбэку как слишком "простые"). */
+.launch-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, #eef6ff 0%, #dcebfc 100%);
+  transition: opacity .25s ease;
+  overflow: hidden;
+}
+
+.launch-splash--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Мягкое размытое свечение позади лого — пульсирует чуть шире и медленнее самого
+   лого, создавая ощущение глубины ("дыхание" не только у лого, но и у фона вокруг
+   него). Центрируется через отрицательные margin, чтобы transform: scale(...)
+   оставался чистым (без конфликта с translate для центрирования). */
+.launch-splash-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 280px;
+  height: 280px;
+  margin: -140px 0 0 -140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(47, 123, 245, .32) 0%, rgba(47, 123, 245, .12) 45%, rgba(47, 123, 245, 0) 72%);
+  filter: blur(2px);
+  animation: launchSplashGlow 2.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.launch-splash-logo {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 132px;
+  height: 132px;
+  animation: launchSplashPulse 2.2s ease-in-out infinite;
+}
+
+.launch-splash-logo img {
+  position: relative;
+  display: block;
+  width: 132px;
+  height: 132px;
+  object-fit: cover;
+  border-radius: 30px;
+  box-shadow: 0 16px 34px rgba(30, 64, 140, .22), 0 0 0 1px rgba(30, 64, 140, .06);
+  animation: launchSplashShadow 2.2s ease-in-out infinite;
+}
+
+.launch-splash-logo-fallback {
+  position: relative;
+  display: none; /* показывается через onerror у <img>, если assets/img/logo.jpg отсутствует */
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #16233f;
+}
+
+.launch-splash-logo-fallback strong {
+  color: var(--accent, #2f7bf5);
+}
+
+@keyframes launchSplashPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@keyframes launchSplashShadow {
+  0%, 100% { box-shadow: 0 16px 34px rgba(30, 64, 140, .22), 0 0 0 1px rgba(30, 64, 140, .06); }
+  50% { box-shadow: 0 22px 46px rgba(30, 64, 140, .3), 0 0 0 1px rgba(30, 64, 140, .08); }
+}
+
+@keyframes launchSplashGlow {
+  0%, 100% { transform: scale(.88); opacity: .55; }
+  50% { transform: scale(1.18); opacity: 1; }
+}
+
 .profile-progress-card {
   background: var(--tag-bg);
   border-radius: var(--radius);

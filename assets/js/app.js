@@ -24,6 +24,32 @@ const MARK_COOLDOWN_MS = 2500;
 let lastMarkAt = 0;
 let profileEditMode = false; /* true = показывать форму редактирования пояса/категории */
 
+/* ---------- Стартовый сплэш ----------
+   Сам экран рисуется сразу в HTML/CSS (см. #launchSplash в index.html/dev.html) —
+   без ожидания JS, чтобы не было паузы перед первым кадром. Отсюда только прячем
+   его, когда контент реально готов (см. вызов hideLaunchSplash() в конце renderAll()).
+   SPLASH_MIN_VISIBLE_MS не даёт сплэшу мелькнуть на пару кадров, если данные
+   загрузились почти мгновенно — сплэш всё равно должен продержаться хотя бы этот
+   срок, иначе будет неприятный "дёрг". SPLASH_MAX_VISIBLE_MS — страховка на случай,
+   если что-то пойдёт не так и renderAll() почему-то не вызовется вовсе. */
+const SPLASH_MIN_VISIBLE_MS = 400;
+const SPLASH_MAX_VISIBLE_MS = 6000;
+const splashShownAt = Date.now();
+let splashHidden = false;
+
+function hideLaunchSplash(){
+  if (splashHidden) return;
+  splashHidden = true;
+  const el = document.getElementById('launchSplash');
+  if (!el) return;
+  const elapsed = Date.now() - splashShownAt;
+  const wait = Math.max(0, SPLASH_MIN_VISIBLE_MS - elapsed);
+  setTimeout(() => {
+    el.classList.add('launch-splash--hidden');
+    setTimeout(() => { el.style.display = 'none'; }, 300); // время CSS-перехода opacity
+  }, wait);
+}
+
 let STATE = {
   courses: [],
   categories: [],
@@ -672,6 +698,7 @@ function renderAll(){
   renderCatalogQuickFilters();
   renderCatalog();
   renderProfile();
+  hideLaunchSplash(); // первый реальный контент готов — прелоадер больше не нужен
 }
 
 /* ---------- "Продолжить просмотр": локальная история открытых курсов ----------
@@ -1540,6 +1567,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
   checkGlobalAccessAndMaybeShowPaywall();
   $('#countInfo').textContent = 'Загрузка...';
   loadData();
+  setTimeout(hideLaunchSplash, SPLASH_MAX_VISIBLE_MS); // страховка: не держать сплэш вечно, если что-то пошло не так
 });
 
 /* small utility: show errors to toast */
