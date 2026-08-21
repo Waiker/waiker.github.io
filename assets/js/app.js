@@ -8,6 +8,8 @@ const KEY_BOOKMARKS = 'bookmarkedCourses';
 const KEY_WATCHED = 'watchedCourses';
 const KEY_BM_META = 'bookmarksMetaCourses';
 const KEY_PROFILE = 'userProfile';
+const KEY_RECENT_VIEWED = 'recentlyViewedCourses';
+const MAX_RECENT_VIEWED = 20; /* сколько последних открытых курсов храним (ряд на главной показывает первые HOME_ROW_PREVIEW_LIMIT из них) */
 
 const CLUB_MAX_LENGTH = 100;
 const CLUB_ALLOWED_REGEX = /[^\p{L}\p{N}\s\-'().,]/gu;
@@ -32,6 +34,7 @@ let STATE = {
   bookmarks: loadJSON(KEY_BOOKMARKS, []),
   watched: loadJSON(KEY_WATCHED, []),
   bmMeta: loadJSON(KEY_BM_META, {}),
+  recentViewed: loadJSON(KEY_RECENT_VIEWED, []), /* массив id курсов, самый свежий — первый */
   profile: loadJSON(KEY_PROFILE, { belt: '', division: '', club: '', status: '' }),
   userProgress: null,
   userRating: 0,
@@ -478,6 +481,13 @@ function renderHomeRows(){
 
   const rows = [];
 
+  // "Продолжить просмотр" — локальная история последних открытых курсов,
+  // самый свежий первым; показываем первым рядом на главной (сразу под баннером),
+  // пока у пользователя нет истории — ряд просто не рендерится (buildHomeRow вернёт null)
+  const recentlyViewed = getRecentlyViewedCourses();
+  const continueRow = buildHomeRow('Продолжить просмотр', recentlyViewed.slice(0, HOME_ROW_PREVIEW_LIMIT), buildCourseTile, recentlyViewed);
+  if (continueRow) rows.push(continueRow);
+
   const newestRow = buildHomeRow('Новинки', allNewest.slice(0, HOME_ROW_PREVIEW_LIMIT), buildCourseTile, allNewest);
   if (newestRow) rows.push(newestRow);
 
@@ -664,12 +674,32 @@ function renderAll(){
   renderProfile();
 }
 
+/* ---------- "Продолжить просмотр": локальная история открытых курсов ----------
+   Пишем id курса при каждом фактическом переходе по ссылке (не при отказе в
+   доступе — там пользователь ничего не открыл). Свежий — всегда первым,
+   дубликаты убираем, список ограничен MAX_RECENT_VIEWED. Хранится только
+   локально (localStorage), без похода на бэкенд. */
+function recordCourseView(course){
+  if (!course || course.id == null) return;
+  STATE.recentViewed = (STATE.recentViewed || []).filter(id => id !== course.id);
+  STATE.recentViewed.unshift(course.id);
+  if (STATE.recentViewed.length > MAX_RECENT_VIEWED) STATE.recentViewed.length = MAX_RECENT_VIEWED;
+  saveJSON(KEY_RECENT_VIEWED, STATE.recentViewed);
+}
+
+function getRecentlyViewedCourses(){
+  return (STATE.recentViewed || [])
+    .map(id => STATE.courses.find(c => c.id === id))
+    .filter(Boolean);
+}
+
 /* ---------- Access check & modal ---------- */
 async function handleCourseClick(course){
   const initData = getInitData();
 
   // If not in Telegram WebApp context – keep current behaviour (no access check)
   if (!initData) {
+    recordCourseView(course);
     window.open(course.url, '_blank');
     return;
   }
@@ -686,6 +716,7 @@ async function handleCourseClick(course){
     try { data = JSON.parse(text); } catch(e) {}
 
     if (res.ok && data && data.allowed === true) {
+      recordCourseView(course);
       try {
         if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openTelegramLink === 'function') {
           window.Telegram.WebApp.openTelegramLink(course.url);
@@ -1369,6 +1400,7 @@ $all('.nav-item').forEach(n=>{
     } else {
       document.body.classList.remove('profile-page-active');
       document.body.classList.remove('leaderboard-page-active');
+      if (target === 'page-catalog' && isHomeMode()) renderCatalog(); // обновить "Продолжить просмотр" после открытия курса
     }
     document.body.classList.remove('category-detail-active');
     window.scrollTo(0,0);
