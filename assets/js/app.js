@@ -82,7 +82,7 @@ function getInitData(){ return (window.Telegram?.WebApp?.initData || ''); }
 function $all(sel){ return Array.from(document.querySelectorAll(sel)) }
 function loadJSON(k,d){ try{ const t=localStorage.getItem(k); return t?JSON.parse(t):d; }catch(e){ return d; } }
 function saveJSON(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
-function showToast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); t.style.opacity=1; setTimeout(()=>{ t.style.opacity=0; },1500); }
+function showToast(msg, ms){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); t.style.opacity=1; setTimeout(()=>{ t.style.opacity=0; },ms||1500); }
 function pluralRu(n, one, few, many){
   const mod10 = n % 10, mod100 = n % 100;
   if (mod10 === 1 && mod100 !== 11) return one;
@@ -740,6 +740,7 @@ function getRecentlyViewedCourses(){
    вызывается синхронно, без await между кликом и открытием ссылки. */
 let accessCheckPromise = null;
 let accessCheckResult = null; // {allowed:true|false} после разрешения промиса; null пока не готово/не в Telegram
+let accessCheckLastError = null; // короткое диагностическое сообщение о последней неудаче — показываем в тосте, чтобы не гадать вслепую
 
 function runAccessCheck(){
   const initData = getInitData();
@@ -751,12 +752,23 @@ function runAccessCheck(){
     body: JSON.stringify({ initData: initData })
   }).then(async res => {
     let data = null;
-    try { data = await res.json(); } catch(e) {}
+    let parseErr = null;
+    try { data = await res.json(); } catch(e) { parseErr = e; }
     const result = (res.ok && data && typeof data.allowed === 'boolean') ? { allowed: data.allowed } : null;
+    if (!result) {
+      const parts = ['HTTP ' + res.status];
+      if (data && data.error) parts.push(String(data.error));
+      if (data && data.reason) parts.push(String(data.reason));
+      if (parseErr) parts.push('parse: ' + parseErr.message);
+      accessCheckLastError = parts.join(' / ');
+    } else {
+      accessCheckLastError = null;
+    }
     accessCheckResult = result;
     return result;
   }).catch(e => {
     console.error('runAccessCheck error', e);
+    accessCheckLastError = 'network: ' + ((e && e.message) ? e.message : String(e));
     accessCheckResult = null;
     accessCheckPromise = null; // дать шанс повторить попытку на следующем клике
     return null;
@@ -825,7 +837,7 @@ function handleCourseClick(course){
       showAccessModal(course);
       return;
     }
-    showToast('Ошибка проверки доступа');
+    showToast('Ошибка проверки доступа' + (accessCheckLastError ? (': ' + accessCheckLastError) : ''), 4000);
   });
 }
 
