@@ -765,15 +765,27 @@ function runAccessCheck(){
 }
 
 function openCourseLink(course){
+  // openLink — официально рекомендованная замена window.open() внутри Telegram
+  // Mini Apps (см. доки WebApp API): Telegram сам корректно маршрутизирует
+  // t.me-ссылки (в т.ч. на посты в закрытых группах, /c/... формат) через
+  // него. openTelegramLink формально тоже "для t.me-ссылок", но на практике
+  // капризнее именно для приватных /c/ пермалинков на разных версиях клиента
+  // и раньше давал тихий отказ без ошибки — поэтому теперь он не первый
+  // вариант, а просто ещё один шаг отказоустойчивости перед window.open.
+  const tg = window.Telegram && window.Telegram.WebApp;
   try {
-    if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openTelegramLink === 'function') {
-      window.Telegram.WebApp.openTelegramLink(course.url);
-    } else {
-      window.open(course.url, '_blank');
+    if (tg && typeof tg.openLink === 'function') {
+      tg.openLink(course.url);
+      return;
     }
-  } catch (eOpen) {
-    window.open(course.url, '_blank');
-  }
+  } catch (eOpenLink) { /* falls through */ }
+  try {
+    if (tg && typeof tg.openTelegramLink === 'function') {
+      tg.openTelegramLink(course.url);
+      return;
+    }
+  } catch (eOpenTgLink) { /* falls through */ }
+  window.open(course.url, '_blank');
 }
 
 function handleCourseClick(course){
