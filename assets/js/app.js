@@ -759,6 +759,7 @@ function runAccessCheck(){
       const parts = ['HTTP ' + res.status];
       if (data && data.error) parts.push(String(data.error));
       if (data && data.reason) parts.push(String(data.reason));
+      if (data && data.detail) parts.push(String(data.detail));
       if (parseErr) parts.push('parse: ' + parseErr.message);
       accessCheckLastError = parts.join(' / ');
     } else {
