@@ -722,50 +722,99 @@ function getRecentlyViewedCourses(){
 }
 
 /* ---------- Access check & modal ---------- */
-async function handleCourseClick(course){
+/* Единая (мемоизированная) проверка доступа — членство в закрытом клубе.
+   check_access.php не использует course_id вообще (это чистая проверка
+   членства в Telegram-группе, одинаковая для любого курса) — поэтому вместо
+   отдельного запроса на каждый клик по курсу проверяем один раз и кэшируем.
+
+   Это не просто оптимизация: раньше открытие курса (openTelegramLink/
+   window.open) вызывалось ПОСЛЕ await fetch(...) внутри обработчика клика —
+   а актуальные версии Telegram-клиента всё строже требуют, чтобы такие
+   методы вызывались синхронно, в рамках самого пользовательского клика,
+   иначе тихо ничего не происходит (без ошибки). Это и есть баг "нажимаешь
+   на курс — пишет 'Проверяем доступ…' — и дальше тишина", о котором сообщил
+   владелец ("раньше работало, сломалось на каком-то обновлении" — обновился
+   не наш код, а поведение Telegram-клиента). Проверка запускается сразу при
+   старте приложения (см. checkGlobalAccessAndMaybeShowPaywall), поэтому к
+   моменту реального клика результат почти всегда уже готов — и openCourseLink
+   вызывается синхронно, без await между кликом и открытием ссылки. */
+let accessCheckPromise = null;
+let accessCheckResult = null; // {allowed:true|false} после разрешения промиса; null пока не готово/не в Telegram
+
+function runAccessCheck(){
+  const initData = getInitData();
+  if (!initData) return Promise.resolve(null);
+  if (accessCheckPromise) return accessCheckPromise;
+  accessCheckPromise = fetch(ACCESS_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ initData: initData })
+  }).then(async res => {
+    let data = null;
+    try { data = await res.json(); } catch(e) {}
+    const result = (res.ok && data && typeof data.allowed === 'boolean') ? { allowed: data.allowed } : null;
+    accessCheckResult = result;
+    return result;
+  }).catch(e => {
+    console.error('runAccessCheck error', e);
+    accessCheckResult = null;
+    accessCheckPromise = null; // дать шанс повторить попытку на следующем клике
+    return null;
+  });
+  return accessCheckPromise;
+}
+
+function openCourseLink(course){
+  try {
+    if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openTelegramLink === 'function') {
+      window.Telegram.WebApp.openTelegramLink(course.url);
+    } else {
+      window.open(course.url, '_blank');
+    }
+  } catch (eOpen) {
+    window.open(course.url, '_blank');
+  }
+}
+
+function handleCourseClick(course){
   const initData = getInitData();
 
   // If not in Telegram WebApp context – keep current behaviour (no access check)
   if (!initData) {
     recordCourseView(course);
-    window.open(course.url, '_blank');
+    openCourseLink(course);
     return;
   }
 
-  try{
-    showToast('Проверяем доступ…');
-    const res = await fetch(ACCESS_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData: initData, course_id: course.id })
-    });
-    const text = await res.text();
-    let data = null;
-    try { data = JSON.parse(text); } catch(e) {}
+  // Результат уже готов (обычный случай) — открываем сразу и синхронно, в
+  // рамках текущего клика, без единого await между кликом и открытием ссылки.
+  if (accessCheckResult && accessCheckResult.allowed === true) {
+    recordCourseView(course);
+    openCourseLink(course);
+    return;
+  }
+  if (accessCheckResult && accessCheckResult.allowed === false) {
+    showAccessModal(course);
+    return;
+  }
 
-    if (res.ok && data && data.allowed === true) {
+  // Результат ещё не готов (редкий race сразу после открытия приложения) или
+  // предыдущая попытка не удалась — ждём как раньше (best effort: открытие
+  // после await технически может не сработать в самых свежих клиентах, но
+  // это редкий случай, а не основной путь).
+  showToast('Проверяем доступ…');
+  runAccessCheck().then(result => {
+    if (result && result.allowed === true) {
       recordCourseView(course);
-      try {
-        if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openTelegramLink === 'function') {
-          window.Telegram.WebApp.openTelegramLink(course.url);
-        } else {
-          window.open(course.url, '_blank');
-        }
-      } catch (eOpen) {
-        window.open(course.url, '_blank');
-      }
+      openCourseLink(course);
       return;
     }
-    if (res.ok && data && data.allowed === false) {
+    if (result && result.allowed === false) {
       showAccessModal(course);
       return;
     }
-
     showToast('Ошибка проверки доступа');
-  } catch(e){
-    console.error('handleCourseClick error', e);
-    showToast('Ошибка проверки доступа');
-  }
+  });
 }
 
 function showAccessModal(course){
@@ -1541,23 +1590,17 @@ function initPaywall(){
 async function checkGlobalAccessAndMaybeShowPaywall(){
   const initData = getInitData();
   if (!initData) return; // вне Telegram-контекста — как и остальные access-проверки, не показываем
+  // Всегда запускаем (и тем самым "прогреваем" общий кэш runAccessCheck —
+  // см. handleCourseClick) независимо от того, покажем ли сам пэйвол: клик
+  // по курсу должен получить готовый результат как можно раньше, а не только
+  // когда пэйвол не на кулдауне.
+  const result = await runAccessCheck();
   if (!shouldShowPaywall()) return;
-  try {
-    const res = await fetch(ACCESS_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData: initData })
-    });
-    let data = null;
-    try { data = await res.json(); } catch(e) {}
-    if (res.ok && data && data.allowed === false) {
-      showPaywall();
-    }
-    // allowed === true или сбой сети/сервера — молча ничего не показываем (fail-open,
-    // чтобы проблема с бэкендом не блокировала каталог для настоящих подписчиков).
-  } catch (e) {
-    console.error('checkGlobalAccessAndMaybeShowPaywall error', e);
+  if (result && result.allowed === false) {
+    showPaywall();
   }
+  // allowed === true или сбой сети/сервера — молча ничего не показываем (fail-open,
+  // чтобы проблема с бэкендом не блокировала каталог для настоящих подписчиков).
 }
 
 /* init */
