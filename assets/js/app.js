@@ -778,26 +778,28 @@ function runAccessCheck(){
 }
 
 function openCourseLink(course){
-  // openLink — официально рекомендованная замена window.open() внутри Telegram
-  // Mini Apps (см. доки WebApp API): Telegram сам корректно маршрутизирует
-  // t.me-ссылки (в т.ч. на посты в закрытых группах, /c/... формат) через
-  // него. openTelegramLink формально тоже "для t.me-ссылок", но на практике
-  // капризнее именно для приватных /c/ пермалинков на разных версиях клиента
-  // и раньше давал тихий отказ без ошибки — поэтому теперь он не первый
-  // вариант, а просто ещё один шаг отказоустойчивости перед window.open.
+  // Все ссылки курсов — это https://t.me/c/<chat>/<msg>, пермалинки на пост
+  // в закрытом канале. Для t.me-ссылок Telegram даёт openTelegramLink —
+  // он открывает их ВНУТРИ приложения Telegram, без выхода в системный
+  // браузер (то самое "открывалось в фоне"). Раньше здесь первым стоял
+  // openLink — а он, согласно докам WebApp API, открывает во ВНЕШНЕМ
+  // браузере, из-за чего на практике получался переход в Chrome с
+  // запросом "открыть в Telegram?" — лишний шаг и просадка UX. Поэтому
+  // openTelegramLink теперь первый вариант, openLink и window.open —
+  // запасные, на случай если он недоступен (не в Telegram / старый клиент).
   const tg = window.Telegram && window.Telegram.WebApp;
-  try {
-    if (tg && typeof tg.openLink === 'function') {
-      tg.openLink(course.url);
-      return;
-    }
-  } catch (eOpenLink) { /* falls through */ }
   try {
     if (tg && typeof tg.openTelegramLink === 'function') {
       tg.openTelegramLink(course.url);
       return;
     }
   } catch (eOpenTgLink) { /* falls through */ }
+  try {
+    if (tg && typeof tg.openLink === 'function') {
+      tg.openLink(course.url);
+      return;
+    }
+  } catch (eOpenLink) { /* falls through */ }
   window.open(course.url, '_blank');
 }
 
