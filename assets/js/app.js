@@ -2,6 +2,9 @@
 const API_URL = 'https://cp.wtfbjj.ru/api/public.php?token=603B591160C537C6D962926C3A9AB2DF';
 const USER_API_BASE = 'https://cp.wtfbjj.ru/miniapp/api';
 const ACCESS_API_URL = USER_API_BASE + '/check_access.php';
+const RECORD_VIEW_API_URL = USER_API_BASE + '/record_view.php';
+const VIEW_COUNTS_API_URL = USER_API_BASE + '/get_view_counts.php';
+const LOG_SEARCH_API_URL = USER_API_BASE + '/log_search.php';
 
 /* STATE + localStorage keys */
 const KEY_BOOKMARKS = 'bookmarkedCourses';
@@ -147,11 +150,53 @@ async function loadData(){
     await userInit();
     renderAll();
     applyAuthorDeepLink();
+    loadViewCounts(); // не блокирует рендер — подтянется и обновит плитки чуть позже
   }catch(e){
     console.error('loadData err',e);
     // fallback demo data
     loadMockData();
   }
+}
+
+/* ---------- Публичные счётчики просмотров курсов ----------
+   Отдельный запрос от каталога (courses_db и wtfbjj_users — разные БД на
+   бэкенде), поэтому счётчики подтягиваются отдельно и домёржатся в
+   STATE.courses, а уже отрисованные плитки обновляются точечно по
+   data-course-id, без полного повторного рендера каталога. */
+async function loadViewCounts(){
+  try{
+    const res = await fetch(VIEW_COUNTS_API_URL);
+    if(!res.ok) return;
+    const data = await res.json();
+    const views = (data && data.views) || {};
+    STATE.courses.forEach(c => { c.views = views[c.id] || 0; });
+    document.querySelectorAll('.course-tile[data-course-id]').forEach(tile => {
+      updateCourseTileViews(tile, views[tile.dataset.courseId] || 0);
+    });
+  }catch(e){
+    console.error('loadViewCounts err', e);
+  }
+}
+
+function updateCourseTileViews(tile, views){
+  let el = tile.querySelector('.course-tile-views');
+  if (!views) { if (el) el.remove(); return; }
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'course-tile-views';
+    tile.appendChild(el);
+  }
+  el.textContent = formatViewCount(views) + ' просмотров';
+}
+
+function formatViewCount(n){
+  n = Number(n) || 0;
+  if (n < 1000) return String(n);
+  const thousands = n / 1000;
+  const rounded = thousands >= 100 ? Math.round(thousands) : Math.round(thousands * 10) / 10;
+  let s = String(rounded);
+  if (s.endsWith('.0')) s = s.slice(0, -2);
+  return s + 'K';
 }
 
 /* ---------- Deep-link на автора (категорию) ----------
@@ -393,6 +438,7 @@ function isRecentCourse(course){
 function buildCourseTile(course){
   const tile = document.createElement('div');
   tile.className = 'course-tile';
+  tile.dataset.courseId = course.id;
 
   const cover = buildCoverEl(course.cover_image, 'course-' + course.id, shortLabel(course.name));
 
@@ -422,6 +468,7 @@ function buildCourseTile(course){
 
   tile.appendChild(cover);
   tile.appendChild(title);
+  if (course.views) updateCourseTileViews(tile, course.views);
   tile.addEventListener('click', () => handleCourseClick(course));
   return tile;
 }
@@ -713,6 +760,31 @@ function recordCourseView(course){
   STATE.recentViewed.unshift(course.id);
   if (STATE.recentViewed.length > MAX_RECENT_VIEWED) STATE.recentViewed.length = MAX_RECENT_VIEWED;
   saveJSON(KEY_RECENT_VIEWED, STATE.recentViewed);
+  reportCourseViewToBackend(course);
+}
+
+/* Публичный счётчик просмотров (на бэкенде, общий для всех пользователей) —
+   отдельно от локальной истории выше. Fire-and-forget: не await'им и не
+   вызываем это ДО openCourseLink(course) в handleCourseClick — вызывается
+   синхронно (сам fetch не блокирует), а не оборачивается в await, чтобы не
+   сломать синхронный пользовательский жест, который требует openTelegramLink
+   (см. комментарий у openCourseLink/handleCourseClick). Бэкенд сам решает,
+   считать ли это новым просмотром (см. "остывание" 7 дней в record_view.php). */
+function reportCourseViewToBackend(course){
+  const initData = getInitData();
+  if (!initData) return;
+  fetch(RECORD_VIEW_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ initData: initData, course_id: course.id })
+  }).then(async res => {
+    if (!res.ok) return;
+    const data = await res.json().catch(() => null);
+    if (!data || typeof data.views !== 'number') return;
+    course.views = data.views;
+    const tile = document.querySelector('.course-tile[data-course-id="' + CSS.escape(String(course.id)) + '"]');
+    if (tile) updateCourseTileViews(tile, data.views);
+  }).catch(e => console.error('reportCourseViewToBackend error', e));
 }
 
 function getRecentlyViewedCourses(){
@@ -1437,10 +1509,32 @@ function renderProfile(){
   }
 }
 
+/* ---------- Лог поисковых запросов (статистика для админки) ----------
+   Не на каждое нажатие клавиши — иначе БД захлебнётся. Ждём ~1.5с паузы
+   после того, как пользователь перестал печатать, и только тогда шлём
+   финальный запрос + сколько курсов он нашёл. */
+let searchLogTimer = null;
+const SEARCH_LOG_DEBOUNCE_MS = 1500;
+function logSearchDebounced(q){
+  if (searchLogTimer) clearTimeout(searchLogTimer);
+  if (!q) return; // пустой запрос (очистили поле) — логировать нечего
+  searchLogTimer = setTimeout(() => {
+    const initData = getInitData();
+    if (!initData) return;
+    const resultsCount = filterCourses().length;
+    fetch(LOG_SEARCH_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData: initData, query: q, results_count: resultsCount })
+    }).catch(e => console.error('logSearchDebounced error', e));
+  }, SEARCH_LOG_DEBOUNCE_MS);
+}
+
 $('#searchInput').addEventListener('input', (e) => {
   const q = (e.target.value || '').trim();
   // сохраняем запрос в STATE, чтобы другие функции (filterCourses и т.д.) могли его использовать
   STATE.query = q;
+  logSearchDebounced(q);
 
   if (q === '') {
     // если поле пустое — сбрасываем категорию и подсказки, ререндерим

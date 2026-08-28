@@ -657,6 +657,12 @@ body {
   cursor: pointer;
 }
 
+.course-tile-views {
+  margin-top: 2px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
 .course-tile-title,
 .category-tile-title {
   margin-top: 8px;
