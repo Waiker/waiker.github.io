@@ -178,15 +178,29 @@ async function loadViewCounts(){
   }
 }
 
+// Порог показа: пока статистика только набирается, единичные просмотры на
+// плитке выглядят странно (у большинства курсов их пока просто нет). Бейдж
+// показываем только начиная с MIN_VIEWS_TO_SHOW просмотров — сам собой
+// появится у курсов, когда наберётся достаточно статистики.
+const MIN_VIEWS_TO_SHOW = 10;
+
 function updateCourseTileViews(tile, views){
   let el = tile.querySelector('.course-tile-views');
-  if (!views) { if (el) el.remove(); return; }
+  if (!views || views < MIN_VIEWS_TO_SHOW) { if (el) el.remove(); return; }
   if (!el) {
     el = document.createElement('div');
     el.className = 'course-tile-views';
     tile.appendChild(el);
   }
-  el.textContent = formatViewCount(views) + ' просмотров';
+  el.textContent = formatViewCount(views) + ' ' + pluralViews(views);
+}
+
+function pluralViews(n){
+  n = Math.abs(Number(n) || 0);
+  const mod10 = n % 10, mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return 'просмотр';
+  if ([2,3,4].includes(mod10) && ![12,13,14].includes(mod100)) return 'просмотра';
+  return 'просмотров';
 }
 
 function formatViewCount(n){
@@ -428,11 +442,19 @@ function buildCoverEl(imageUrl, seed, label){
   return el;
 }
 
+// Единый порог "свежести" курса — используется и для бейджа NEW на плитке,
+// и для отбора курсов в подборку "Новинки" на главной (см. renderHomeRows).
+// Раньше это было рассинхронизировано: бейдж NEW учитывал порог, а сама
+// подборка "Новинки" — нет (брала вообще все курсы с датой, просто
+// отсортированные по свежести), из-за чего в "Новинках" оказывались и
+// старые курсы.
+const NEW_COURSE_MAX_AGE_DAYS = 90;
+
 function isRecentCourse(course){
   if (!course.created_at) return false;
   const d = new Date(String(course.created_at).replace(' ', 'T'));
   if (isNaN(d.getTime())) return false;
-  return (Date.now() - d.getTime()) < 1000 * 60 * 60 * 24 * 90; // не старше 3 месяцев
+  return (Date.now() - d.getTime()) < 1000 * 60 * 60 * 24 * NEW_COURSE_MAX_AGE_DAYS;
 }
 
 function buildCourseTile(course){
@@ -532,7 +554,7 @@ function renderHomeRows(){
   wrap.innerHTML = '';
 
   const allNewest = STATE.courses
-    .filter(c => c.created_at)
+    .filter(c => c.created_at && isRecentCourse(c))
     .slice()
     .sort((a, b) => new Date(String(b.created_at).replace(' ', 'T')) - new Date(String(a.created_at).replace(' ', 'T')));
 
