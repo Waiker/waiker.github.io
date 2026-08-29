@@ -13,6 +13,8 @@ const KEY_BM_META = 'bookmarksMetaCourses';
 const KEY_PROFILE = 'userProfile';
 const KEY_RECENT_VIEWED = 'recentlyViewedCourses';
 const MAX_RECENT_VIEWED = 20; /* сколько последних открытых курсов храним (ряд на главной показывает первые HOME_ROW_PREVIEW_LIMIT из них) */
+const KEY_RECENT_SEARCHES = 'recentSearches';
+const MAX_RECENT_SEARCHES = 8; /* сколько последних поисковых запросов показываем при фокусе на пустом поле поиска */
 
 const CLUB_MAX_LENGTH = 100;
 const CLUB_ALLOWED_REGEX = /[^\p{L}\p{N}\s\-'().,]/gu;
@@ -377,15 +379,17 @@ function renderSuggestions(q){
     if(r.type==='course'){
       el.innerHTML = `<strong>${escapeHtml(r.ref.name)}</strong> <span style="color:#888;display:block;font-size:13px">${escapeHtml(r.ref.description || r.ref.url)}</span>`;
       // через handleCourseClick, чтобы проверка доступа к закрытой группе работала так же, как из карточки
-      el.onclick = ()=>{ box.style.display='none'; $('#searchInput').value=''; STATE.query=''; renderCatalog(); handleCourseClick(r.ref); };
+      el.onclick = ()=>{ addRecentSearch(q); box.style.display='none'; $('#searchInput').value=''; STATE.query=''; updateSearchClearBtn(); renderCatalog(); handleCourseClick(r.ref); };
     } else {
       el.innerHTML = `<span>#${escapeHtml(r.ref.name)}</span><span class="type-cat">категория</span>`;
       el.onclick = () => {
+        addRecentSearch(q);
         // Подставляем имя категории в поле поиска — пользователь видит активный фильтр
         $('#searchInput').value = r.ref.name;
         STATE.query = String(r.ref.name);
         STATE.activeCategory = String(r.ref.id);
         box.style.display = 'none';
+        updateSearchClearBtn();
         renderCategoryChips();
         renderCatalog();
         $('#searchInput').blur();
@@ -394,6 +398,78 @@ function renderSuggestions(q){
     box.appendChild(el);
   });
   box.style.display='block';
+}
+
+/* ---------- История поиска (недавние запросы) ----------
+   Локальная (localStorage), отдельно от серверного search_log — тот нужен
+   для админской статистики, а это чисто для удобства самого пользователя:
+   показать последние запросы при фокусе на пустом поле, чтобы не вводить
+   заново то, что уже искал недавно. */
+function loadRecentSearches(){ return loadJSON(KEY_RECENT_SEARCHES, []); }
+function saveRecentSearchesList(arr){ saveJSON(KEY_RECENT_SEARCHES, arr); }
+
+function addRecentSearch(q){
+  q = String(q || '').trim();
+  if (q.length < 2) return; // не засоряем историю однобуквенными обрывками
+  let arr = loadRecentSearches().filter(x => x.toLowerCase() !== q.toLowerCase());
+  arr.unshift(q);
+  if (arr.length > MAX_RECENT_SEARCHES) arr = arr.slice(0, MAX_RECENT_SEARCHES);
+  saveRecentSearchesList(arr);
+}
+
+function removeRecentSearch(q){
+  saveRecentSearchesList(loadRecentSearches().filter(x => x !== q));
+}
+
+function renderRecentSearches(){
+  const box = $('#suggestBox');
+  const recent = loadRecentSearches();
+  box.innerHTML = '';
+  if (!recent.length) { box.style.display = 'none'; return; }
+
+  const header = document.createElement('div');
+  header.className = 'suggest-recent-header';
+  const label = document.createElement('span');
+  label.textContent = 'Недавние запросы';
+  const clearAll = document.createElement('button');
+  clearAll.type = 'button';
+  clearAll.className = 'suggest-recent-clear';
+  clearAll.textContent = 'Очистить';
+  clearAll.onclick = (e) => { e.stopPropagation(); saveRecentSearchesList([]); box.style.display = 'none'; };
+  header.append(label, clearAll);
+  box.appendChild(header);
+
+  recent.forEach(q => {
+    const row = document.createElement('div');
+    row.className = 'item suggest-recent-item';
+    const text = document.createElement('span');
+    text.className = 'suggest-recent-text';
+    text.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> ${escapeHtml(q)}`;
+    text.onclick = () => {
+      $('#searchInput').value = q;
+      STATE.query = q;
+      box.style.display = 'none';
+      updateSearchClearBtn();
+      renderCategoryChips();
+      renderCatalog();
+    };
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'suggest-recent-remove';
+    removeBtn.setAttribute('aria-label', 'Удалить запрос из истории');
+    removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+    removeBtn.onclick = (e) => { e.stopPropagation(); removeRecentSearch(q); renderRecentSearches(); };
+    row.append(text, removeBtn);
+    box.appendChild(row);
+  });
+  box.style.display = 'block';
+}
+
+/* ---------- Кнопка «×» очистки поля поиска ---------- */
+function updateSearchClearBtn(){
+  const btn = $('#searchClearBtn');
+  if (!btn) return;
+  btn.style.display = $('#searchInput').value ? 'flex' : 'none';
 }
 
 /* ---------- Главный экран: подборки-ряды с обложками ---------- */
@@ -1541,6 +1617,9 @@ function logSearchDebounced(q){
   if (searchLogTimer) clearTimeout(searchLogTimer);
   if (!q) return; // пустой запрос (очистили поле) — логировать нечего
   searchLogTimer = setTimeout(() => {
+    // локальная история "недавние запросы" — не зависит от initData, работает
+    // и вне Telegram (например, при тестировании в обычном браузере)
+    addRecentSearch(q);
     const initData = getInitData();
     if (!initData) return;
     const resultsCount = filterCourses().length;
@@ -1557,13 +1636,14 @@ $('#searchInput').addEventListener('input', (e) => {
   // сохраняем запрос в STATE, чтобы другие функции (filterCourses и т.д.) могли его использовать
   STATE.query = q;
   logSearchDebounced(q);
+  updateSearchClearBtn();
 
   if (q === '') {
-    // если поле пустое — сбрасываем категорию и подсказки, ререндерим
+    // если поле пустое — сбрасываем категорию, показываем историю запросов вместо подсказок
     STATE.activeCategory = null;
-    $('#suggestBox').style.display = 'none';
     renderCategoryChips(); // обновить визуально чипы категорий
     renderCatalog();    // показать все курсы
+    renderRecentSearches();
     return;
   }
 
@@ -1571,28 +1651,46 @@ $('#searchInput').addEventListener('input', (e) => {
   renderSuggestions(q);
   renderCatalog();
 });
+$('#searchInput').addEventListener('focus', (e) => {
+  // если поле пустое — при фокусе показываем историю недавних запросов,
+  // чтобы не вводить заново то, что уже искали
+  if (!e.target.value.trim()) renderRecentSearches();
+});
 $('#searchInput').addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     $('#searchInput').value = '';
     STATE.query = '';
     $('#suggestBox').style.display = 'none';
+    updateSearchClearBtn();
     renderCatalog();
     return;
   }
   if (e.key === 'Enter') {
     e.preventDefault();
-    STATE.query = e.target.value.trim();
+    const q = e.target.value.trim();
+    STATE.query = q;
     STATE.activeCategory = null;
+    addRecentSearch(q);
     $('#suggestBox').style.display = 'none';
     renderCategoryChips();
     renderCatalog();
     e.target.blur();
   }
 });
+$('#searchClearBtn').addEventListener('click', () => {
+  const input = $('#searchInput');
+  input.value = '';
+  STATE.query = '';
+  STATE.activeCategory = null;
+  updateSearchClearBtn();
+  renderCategoryChips();
+  renderCatalog();
+  input.focus(); // фокус вернём — сработает renderRecentSearches() из обработчика focus выше
+});
 
 /* suggestion click outside close */
 document.addEventListener('click', (e) => {
-  if (!e.target.closest('#suggestBox') && !e.target.closest('#searchInput')) {
+  if (!e.target.closest('#suggestBox') && !e.target.closest('#searchInput') && !e.target.closest('#searchClearBtn')) {
     $('#suggestBox').style.display = 'none';
   }
 });
