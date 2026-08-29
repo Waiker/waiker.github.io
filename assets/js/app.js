@@ -12,7 +12,7 @@ const KEY_WATCHED = 'watchedCourses';
 const KEY_BM_META = 'bookmarksMetaCourses';
 const KEY_PROFILE = 'userProfile';
 const KEY_RECENT_VIEWED = 'recentlyViewedCourses';
-const MAX_RECENT_VIEWED = 20; /* сколько последних открытых курсов храним (ряд на главной показывает первые HOME_ROW_PREVIEW_LIMIT из них) */
+const MAX_RECENT_VIEWED = 50; /* сколько последних открытых курсов храним (ряд на главной показывает первые HOME_ROW_PREVIEW_LIMIT из них, полный список — по кнопке "Смотреть все") */
 const KEY_RECENT_SEARCHES = 'recentSearches';
 const MAX_RECENT_SEARCHES = 8; /* сколько последних поисковых запросов показываем при фокусе на пустом поле поиска */
 
@@ -571,6 +571,27 @@ function buildCourseTile(course){
   return tile;
 }
 
+/* Плитка курса для ряда/грида "Продолжить просмотр" — та же плитка, что и
+   везде, плюс кнопка "убрать из истории" в свободном нижнем правом углу
+   обложки (верхние углы уже заняты закладкой и бейджем "новое") */
+function buildCourseTileHistory(course){
+  const tile = buildCourseTile(course);
+  const cover = tile.querySelector('.cover-tile-media');
+  if (cover) {
+    const rm = document.createElement('button');
+    rm.type = 'button';
+    rm.className = 'course-tile-remove';
+    rm.setAttribute('aria-label', 'Убрать из истории просмотров');
+    rm.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+    rm.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      removeFromRecentViewed(course.id);
+    });
+    cover.appendChild(rm);
+  }
+  return tile;
+}
+
 function buildCategoryTile(cat){
   const tile = document.createElement('div');
   // авторы — круглый аватар (как у людей в стриминговых сервисах), темы/остальное — прямоугольная плитка
@@ -657,7 +678,7 @@ function renderHomeRows(){
   // самый свежий первым; показываем первым рядом на главной (сразу под баннером),
   // пока у пользователя нет истории — ряд просто не рендерится (buildHomeRow вернёт null)
   const recentlyViewed = getRecentlyViewedCourses();
-  const continueRow = buildHomeRow('Продолжить просмотр', recentlyViewed.slice(0, HOME_ROW_PREVIEW_LIMIT), buildCourseTile, recentlyViewed);
+  const continueRow = buildHomeRow('Продолжить просмотр', recentlyViewed.slice(0, HOME_ROW_PREVIEW_LIMIT), buildCourseTileHistory, recentlyViewed);
   if (continueRow) rows.push(continueRow);
 
   const newestRow = buildHomeRow('Новинки', allNewest.slice(0, HOME_ROW_PREVIEW_LIMIT), buildCourseTile, allNewest);
@@ -889,6 +910,25 @@ function getRecentlyViewedCourses(){
   return (STATE.recentViewed || [])
     .map(id => STATE.courses.find(c => c.id === id))
     .filter(Boolean);
+}
+
+/* Убрать курс из локальной истории "Продолжить просмотр" (кнопка на плитке) */
+function removeFromRecentViewed(courseId){
+  STATE.recentViewed = (STATE.recentViewed || []).filter(id => id !== courseId);
+  saveJSON(KEY_RECENT_VIEWED, STATE.recentViewed);
+  refreshContinueWatchingUI();
+}
+
+/* Перерисовываем ряд "Продолжить просмотр" на главной; если в этот момент
+   открыт его полноэкранный грид (кнопка "Смотреть все") — обновляем и грид,
+   иначе там останется удалённая плитка до следующего захода на страницу */
+function refreshContinueWatchingUI(){
+  renderHomeRows();
+  const detailPage = $('#page-category-detail');
+  const titleEl = $('#categoryDetailTitle');
+  if (detailPage && detailPage.classList.contains('active') && titleEl && titleEl.textContent === 'Продолжить просмотр') {
+    openGridDetail('Продолжить просмотр', getRecentlyViewedCourses(), buildCourseTileHistory);
+  }
 }
 
 /* ---------- Access check & modal ---------- */
