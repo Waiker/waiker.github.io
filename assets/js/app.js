@@ -610,8 +610,11 @@ function buildCategoryTile(cat){
 }
 
 /* items — то, что показано в самом ряду (уже урезано до превью-лимита);
-   fullItems — полный список для кнопки "Смотреть все" (если не передан — используется items) */
-function buildHomeRow(title, items, tileBuilder, fullItems){
+   fullItems — полный список для кнопки "Смотреть все" (если не передан — используется items);
+   forceSeeAll — показывать кнопку даже если весь список и так уже виден в ряду (используется для
+   кастомных подборок владельца — это именованный раздел, который должен открываться отдельным
+   экраном независимо от того, сколько в нём курсов) */
+function buildHomeRow(title, items, tileBuilder, fullItems, forceSeeAll){
   if (!items || items.length === 0) return null;
   const row = document.createElement('div');
   row.className = 'home-row';
@@ -625,7 +628,7 @@ function buildHomeRow(title, items, tileBuilder, fullItems){
   head.appendChild(heading);
 
   const full = fullItems || items;
-  if (full.length > items.length) {
+  if (forceSeeAll || full.length > items.length) {
     const seeAll = document.createElement('button');
     seeAll.type = 'button';
     seeAll.className = 'home-row-seeall';
@@ -703,7 +706,7 @@ function renderHomeRows(){
     const items = (col.course_ids || [])
       .map(id => STATE.courses.find(c => c.id === id))
       .filter(Boolean);
-    const row = buildHomeRow(col.name, items.slice(0, HOME_ROW_PREVIEW_LIMIT), buildCourseTile, items);
+    const row = buildHomeRow(col.name, items.slice(0, HOME_ROW_PREVIEW_LIMIT), buildCourseTile, items, true);
     if (row) rows.push(row);
   });
 
