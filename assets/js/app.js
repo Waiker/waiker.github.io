@@ -1,4 +1,8 @@
 /* CONFIG */
+/* Временное тематическое оформление на Хэллоуин — переопределяет CSS-переменные
+   цветов + добавляет декор (паутинки по углам, тёмно-фиолетовый сплэш), см. .theme-halloween
+   в style.css. Чтобы вернуть обычный дизайн после праздника — просто поставить false. */
+const HALLOWEEN_THEME = true;
 const API_URL = 'https://cp.wtfbjj.ru/api/public.php?token=603B591160C537C6D962926C3A9AB2DF';
 const USER_API_BASE = 'https://cp.wtfbjj.ru/miniapp/api';
 const ACCESS_API_URL = USER_API_BASE + '/check_access.php';
@@ -105,6 +109,7 @@ function initTheme(){
   applyTelegramTheme();
   const webApp = window.Telegram?.WebApp;
   if (webApp?.onEvent) webApp.onEvent('themeChanged', applyTelegramTheme);
+  document.documentElement.classList.toggle('theme-halloween', HALLOWEEN_THEME);
 }
 
 /* Access tariffs config for closed group */

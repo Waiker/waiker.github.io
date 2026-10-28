@@ -55,6 +55,79 @@
   --shadow-focus: 0 0 0 3px rgba(59, 130, 246, 0.35);
 }
 
+/* ===== Хэллоуин — временное тематическое оформление =====
+   Включается/выключается флагом HALLOWEEN_THEME в app.js (initTheme() переключает
+   класс .theme-halloween на <html>). Переопределяем только переменные цвета — почти
+   весь UI (кнопки, чипы, бейджи, нижняя навигация) уже построен на них, поэтому
+   перекрашивается сам, плюс несколько декоративных штрихов ниже. */
+.theme-halloween {
+  --accent: #ff7a1a;
+  --accent-hover: #ff9a40;
+  --accent-rgb: 255, 122, 26;
+  --bg: #140a1f;
+  --card: #1f1430;
+  --text: #f4ece0;
+  --text-secondary: #d8c7e8;
+  --muted: #a98fc7;
+  --border: #3a2650;
+  --divider: #2a1b3d;
+  --chip-bg: #2a1b3d;
+  --tag-bg: rgba(255, 122, 26, 0.18);
+  --topbar-bg: #1a1026;
+  --nav-bg: #1a1026;
+  --suggest-bg: #211631;
+  --mini-card-bg: #211631;
+  --shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  --shadow-focus: 0 0 0 3px rgba(255, 122, 26, 0.35);
+}
+
+/* Паутинки по углам экрана — чисто декоративные (pointer-events: none),
+   не мешают кликам и не зависят от разметки страницы */
+.theme-halloween body::before,
+.theme-halloween body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  width: 92px;
+  height: 92px;
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 2500;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23cbb6e0' stroke-width='1.2'%3E%3Cpath d='M0 0 L100 100'/%3E%3Cpath d='M0 0 L100 55'/%3E%3Cpath d='M0 0 L55 100'/%3E%3Cpath d='M0 0 L100 20'/%3E%3Cpath d='M0 0 L20 100'/%3E%3Cpath d='M0 0 L100 0'/%3E%3Cpath d='M0 0 L0 100'/%3E%3Cpath d='M8 0 A 8 8 0 0 1 0 8'/%3E%3Cpath d='M22 0 A 22 22 0 0 1 0 22'/%3E%3Cpath d='M40 0 A 40 40 0 0 1 0 40'/%3E%3Cpath d='M62 0 A 62 62 0 0 1 0 62'/%3E%3Cpath d='M85 0 A 85 85 0 0 1 0 85'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.theme-halloween body::before {
+  left: 0;
+}
+
+.theme-halloween body::after {
+  right: 0;
+  transform: scaleX(-1);
+}
+
+@media (max-width: 420px) {
+  .theme-halloween body::before,
+  .theme-halloween body::after {
+    width: 60px;
+    height: 60px;
+    opacity: 0.4;
+  }
+}
+
+.theme-halloween .launch-splash {
+  background: linear-gradient(160deg, #1a0f28 0%, #2b1440 100%);
+}
+
+.theme-halloween .launch-splash-glow {
+  background: radial-gradient(circle, rgba(255, 122, 26, .38) 0%, rgba(255, 122, 26, .14) 45%, rgba(255, 122, 26, 0) 72%);
+}
+
+.theme-halloween .launch-splash-logo-fallback {
+  color: #f4ece0;
+}
+
 html {
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
