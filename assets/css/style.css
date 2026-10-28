@@ -81,38 +81,40 @@
   --shadow-focus: 0 0 0 3px rgba(255, 122, 26, 0.35);
 }
 
-/* Паутинки по углам экрана — чисто декоративные (pointer-events: none),
-   не мешают кликам и не зависят от разметки страницы */
+/* Паутинки по углам экрана — чисто декоративные (pointer-events: none), не мешают
+   кликам. Кольца нарисованы не идеальными дугами (от этого паутинка смотрелась
+   как техническая схема), а квадратичными кривыми, "провисающими" к центру между
+   спицами — даёт привычный "ламповый" рисунок паутины с парой капелек росы. */
 .theme-halloween body::before,
 .theme-halloween body::after {
   content: "";
   position: fixed;
   top: 0;
-  width: 92px;
-  height: 92px;
+  width: 84px;
+  height: 84px;
   background-repeat: no-repeat;
   background-size: contain;
-  opacity: 0.5;
   pointer-events: none;
   z-index: 2500;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23cbb6e0' stroke-width='1.2'%3E%3Cpath d='M0 0 L100 100'/%3E%3Cpath d='M0 0 L100 55'/%3E%3Cpath d='M0 0 L55 100'/%3E%3Cpath d='M0 0 L100 20'/%3E%3Cpath d='M0 0 L20 100'/%3E%3Cpath d='M0 0 L100 0'/%3E%3Cpath d='M0 0 L0 100'/%3E%3Cpath d='M8 0 A 8 8 0 0 1 0 8'/%3E%3Cpath d='M22 0 A 22 22 0 0 1 0 22'/%3E%3Cpath d='M40 0 A 40 40 0 0 1 0 40'/%3E%3Cpath d='M62 0 A 62 62 0 0 1 0 62'/%3E%3Cpath d='M85 0 A 85 85 0 0 1 0 85'/%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 125 125'%3E%3Cg fill='none' stroke='%23d9c9ef' stroke-linecap='round'%3E%3Cpath stroke-width='1' stroke-opacity='0.55' d='M3 3 L121 3 M3 3 L117 33.6 M3 3 L100.8 69 M3 3 L78.9 93.4 M3 3 L43.4 113.9 M3 3 L3 121'/%3E%3Cpath stroke-width='1' stroke-opacity='0.8' d='M23 3 Q14.9 4.6 22.3 8.2 Q13.9 8 19.6 14.2 Q11.9 11 15.9 18.3 Q9 13.4 9.8 21.8 Q5.1 14.8 3 23'/%3E%3Cpath stroke-width='0.9' stroke-opacity='0.65' d='M45 3 Q27.8 6.3 43.6 13.9 Q25.8 13.4 37.8 26.5 Q21.6 19.7 30 35.2 Q15.5 24.7 17.4 42.5 Q7.4 27.6 3 45'/%3E%3Cpath stroke-width='0.8' stroke-opacity='0.5' d='M69 3 Q42.6 8.2 66.8 20.1 Q39.4 19.6 57.7 39.9 Q32.7 29.8 45.4 53.6 Q23 37.6 25.6 65 Q9.96 42.4 3 69'/%3E%3Cpath stroke-width='0.7' stroke-opacity='0.35' d='M95 3 Q58.5 10.3 91.9 26.8 Q53.9 26.2 79.3 54.4 Q44.6 40.5 62.2 73.5 Q31 51.5 34.5 89.5 Q12.7 58.2 3 95'/%3E%3C/g%3E%3Cg fill='%23d9c9ef'%3E%3Ccircle cx='32.7' cy='29.8' r='1.6' opacity='0.85'/%3E%3Ccircle cx='31' cy='51.5' r='1.6' opacity='0.7'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 .theme-halloween body::before {
   left: 0;
+  opacity: 0.6;
 }
 
 .theme-halloween body::after {
   right: 0;
   transform: scaleX(-1);
+  opacity: 0.45;
 }
 
 @media (max-width: 420px) {
   .theme-halloween body::before,
   .theme-halloween body::after {
-    width: 60px;
-    height: 60px;
-    opacity: 0.4;
+    width: 56px;
+    height: 56px;
   }
 }
 
@@ -126,6 +128,102 @@
 
 .theme-halloween .launch-splash-logo-fallback {
   color: #f4ece0;
+}
+
+/* Паучок, время от времени спускающийся по нитке (см. initHalloweenFun() в app.js).
+   Контейнер всегда pointer-events:none (чтобы нитка не ловила клики по контенту
+   под собой) — кликабельно только само тельце. transform: translateY(-100%)
+   прячет паучка целиком НАД экраном независимо от текущей длины нити (т.к. %
+   считается от собственной высоты элемента, включающей и нить, и тельце). */
+.hw-spider {
+  position: fixed;
+  top: 0;
+  z-index: 2600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  transform: translateY(-100%);
+  transition: transform 1.2s cubic-bezier(.32, 1.15, .4, 1);
+}
+
+.hw-spider-thread {
+  width: 1px;
+  flex: 0 0 auto;
+  background: linear-gradient(to bottom, rgba(217, 201, 239, 0), rgba(217, 201, 239, .8));
+}
+
+.hw-spider-body {
+  font-size: 28px;
+  line-height: 1;
+  /* невидимый запас вокруг эмодзи — палец промахивается мимо самой картинки
+     куда чаще, чем кажется, особенно пока она покачивается */
+  padding: 14px;
+  margin: -14px;
+  pointer-events: auto;
+  cursor: pointer;
+  transform-origin: top center;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .45));
+  animation: hwSpiderSway 2.4s ease-in-out infinite;
+}
+
+.hw-spider-body.hw-squish {
+  animation: hwSquish .45s ease;
+}
+
+@keyframes hwSpiderSway {
+  0%, 100% { transform: rotate(-8deg); }
+  50% { transform: rotate(8deg); }
+}
+
+@keyframes hwSquish {
+  0% { transform: scale(1) rotate(0); }
+  35% { transform: scale(1.35, .65) rotate(-4deg); }
+  65% { transform: scale(.82, 1.2) rotate(4deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+/* Тыква-пасхалка, спрятанная в правом верхнем углу среди ниток паутины —
+   полупрозрачная, чтобы сливаться с фоном, но с едва заметной пульсацией,
+   которая выдаёт её внимательному глазу */
+.hw-pumpkin-egg {
+  position: fixed;
+  top: 40px;
+  right: 22px;
+  z-index: 2600;
+  font-size: 15px;
+  line-height: 1;
+  border: 0;
+  background: transparent;
+  padding: 6px;
+  margin: -6px;
+  cursor: pointer;
+  opacity: 0.4;
+  filter: grayscale(.3);
+  animation: hwPumpkinPulse 4s ease-in-out infinite;
+}
+
+@keyframes hwPumpkinPulse {
+  0%, 100% { transform: scale(1); opacity: .35; }
+  50% { transform: scale(1.12); opacity: .55; }
+}
+
+.hw-pumpkin-egg:active {
+  transform: scale(.9);
+}
+
+/* Разлетающиеся частицы при находке тыквы */
+.hw-burst-particle {
+  position: fixed;
+  z-index: 2700;
+  font-size: 14px;
+  pointer-events: none;
+  animation: hwBurst .7s ease-out forwards;
+}
+
+@keyframes hwBurst {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--hw-dx), var(--hw-dy)) scale(.4); opacity: 0; }
 }
 
 html {

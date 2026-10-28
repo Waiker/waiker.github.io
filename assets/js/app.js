@@ -112,6 +112,120 @@ function initTheme(){
   document.documentElement.classList.toggle('theme-halloween', HALLOWEEN_THEME);
 }
 
+/* ---------- Хэллоуинские пасхалки: паучок на нитке + спрятанная тыква ----------
+   Чисто развлекательный декор поверх темы, без влияния на данные/состояние
+   приложения. Выключается вместе с HALLOWEEN_THEME. */
+const HALLOWEEN_SPIDER_PHRASES = [
+  'Бу! 🕷️ Напугал?',
+  'Паучок одобряет твой спайдер гард 🕸️',
+  'У меня тут восемь лап, какой тебя задушить? 😅',
+  'Хорошая реакция! 🕷️',
+  'Поймал паучка — получи +0 к рейтингу 🎃',
+];
+const HALLOWEEN_PUMPKIN_PHRASES = [
+  '🎃 Тыква найдена! Внимательность — как у чёрного пояса.',
+  '🎃 Есть!',
+  '🎃 Зоркий глаз — спрятал её специально для внимательных.',
+  '🎃 Поймал! Загляни в «Новинки» — там тоже кое-что новое.',
+];
+const HALLOWEEN_BURST_EMOJI = ['🎃', '✨', '👻'];
+
+function pickRandom(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+
+function spawnHalloweenBurst(x, y){
+  for (let i = 0; i < 6; i++){
+    const p = document.createElement('span');
+    p.className = 'hw-burst-particle';
+    p.textContent = pickRandom(HALLOWEEN_BURST_EMOJI);
+    const angle = (Math.PI * 2 * i) / 6 + Math.random() * 0.4;
+    const dist = 36 + Math.random() * 24;
+    p.style.left = x + 'px';
+    p.style.top = y + 'px';
+    p.style.setProperty('--hw-dx', (Math.cos(angle) * dist).toFixed(0) + 'px');
+    p.style.setProperty('--hw-dy', (Math.sin(angle) * dist).toFixed(0) + 'px');
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 750);
+  }
+}
+
+function initHalloweenPumpkinEgg(){
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'hw-pumpkin-egg';
+  btn.setAttribute('aria-label', 'Хэллоуинская пасхалка');
+  btn.textContent = '🎃';
+  btn.addEventListener('click', (ev) => {
+    const rect = btn.getBoundingClientRect();
+    spawnHalloweenBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    showToast(pickRandom(HALLOWEEN_PUMPKIN_PHRASES), 2200);
+  });
+  document.body.appendChild(btn);
+}
+
+function initHalloweenSpider(){
+  const wrap = document.createElement('div');
+  wrap.className = 'hw-spider';
+  const thread = document.createElement('div');
+  thread.className = 'hw-spider-thread';
+  const body = document.createElement('div');
+  body.className = 'hw-spider-body';
+  body.textContent = '🕷️';
+  wrap.appendChild(thread);
+  wrap.appendChild(body);
+  document.body.appendChild(wrap);
+
+  let visible = false;
+  let retractTimer = null;
+
+  function retract(){
+    wrap.style.transform = 'translateY(-100%)';
+    setTimeout(() => { visible = false; scheduleNext(); }, 1200);
+  }
+
+  function onCaught(){
+    clearTimeout(retractTimer);
+    body.classList.add('hw-squish');
+    showToast(pickRandom(HALLOWEEN_SPIDER_PHRASES), 2200);
+    setTimeout(() => {
+      body.classList.remove('hw-squish');
+      retract();
+    }, 450);
+  }
+
+  body.addEventListener('click', onCaught);
+
+  function appear(){
+    if (document.hidden) { scheduleNext(); return; }
+    visible = true;
+    const vw = window.innerWidth || 375;
+    const left = 24 + Math.random() * Math.max(40, vw - 80);
+    const drop = 90 + Math.random() * 110;
+    wrap.style.left = left + 'px';
+    thread.style.height = drop + 'px';
+    // переcчитать translateY(-100%) от новой высоты, потом опустить на экран
+    wrap.style.transform = 'translateY(-100%)';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      wrap.style.transform = 'translateY(0)';
+    }));
+    // ~1.2с на спуск + 6-8с "повисеть" полностью видимым и кликабельным —
+    // раньше было вдвое меньше, из-за чего поймать не успевали
+    retractTimer = setTimeout(retract, 1200 + 6000 + Math.random() * 2000);
+  }
+
+  function scheduleNext(){
+    const delay = 14000 + Math.random() * 12000; // раз в ~14-26 секунд
+    setTimeout(appear, delay);
+  }
+
+  scheduleNext();
+}
+
+function initHalloweenFun(){
+  if (!HALLOWEEN_THEME) return;
+  initHalloweenPumpkinEgg();
+  initHalloweenSpider();
+}
+
 /* Access tariffs config for closed group */
 const ACCESS_TARIFFS = [
   {
@@ -1896,6 +2010,7 @@ async function checkGlobalAccessAndMaybeShowPaywall(){
 window.addEventListener('DOMContentLoaded', ()=>{
   // init UI
   initTheme();
+  initHalloweenFun();
   initPaywall();
   checkGlobalAccessAndMaybeShowPaywall();
   $('#countInfo').textContent = 'Загрузка...';
