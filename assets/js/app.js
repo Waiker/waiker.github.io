@@ -1,8 +1,13 @@
 /* CONFIG */
-/* Временное тематическое оформление на Хэллоуин — переопределяет CSS-переменные
-   цветов + добавляет декор (паутинки по углам, тёмно-фиолетовый сплэш), см. .theme-halloween
-   в style.css. Чтобы вернуть обычный дизайн после праздника — просто поставить false. */
-const HALLOWEEN_THEME = true;
+/* Сезонное оформление мини-аппа ("скины" на праздники: Хэллоуин, зима и т.д.) —
+   управляется УДАЛЁННО из админки (вкладка "Оформление" → api/set_theme.php),
+   без деплоя кода: сервер отдаёт текущую тему полем `theme` в ответе
+   api/public.php, см. applySeasonalTheme() и её вызов в loadData().
+   LOCAL_FALLBACK_THEME используется только вне Telegram/при недоступном
+   бэкенде (loadMockData) — чтобы тему можно было смотреть локально без
+   сервера; в бою решает всегда значение с бэкенда. */
+const KNOWN_SEASONAL_THEMES = ['halloween', 'winter'];
+const LOCAL_FALLBACK_THEME = 'winter';
 const API_URL = 'https://cp.wtfbjj.ru/api/public.php?token=603B591160C537C6D962926C3A9AB2DF';
 const USER_API_BASE = 'https://cp.wtfbjj.ru/miniapp/api';
 const ACCESS_API_URL = USER_API_BASE + '/check_access.php';
@@ -109,12 +114,23 @@ function initTheme(){
   applyTelegramTheme();
   const webApp = window.Telegram?.WebApp;
   if (webApp?.onEvent) webApp.onEvent('themeChanged', applyTelegramTheme);
-  document.documentElement.classList.toggle('theme-halloween', HALLOWEEN_THEME);
+}
+
+/* Применяет сезонную тему, пришедшую с бэкенда (или LOCAL_FALLBACK_THEME, если
+   бэкенд недоступен) — один раз за загрузку страницы, до первого рендера. */
+function applySeasonalTheme(theme){
+  const next = KNOWN_SEASONAL_THEMES.includes(theme) ? theme : 'none';
+  KNOWN_SEASONAL_THEMES.forEach(t => document.documentElement.classList.remove('theme-' + t));
+  if (next === 'none') return;
+  document.documentElement.classList.add('theme-' + next);
+  if (next === 'halloween') initHalloweenFun();
+  if (next === 'winter') initWinterSnow();
 }
 
 /* ---------- Хэллоуинские пасхалки: паучок на нитке + спрятанная тыква ----------
    Чисто развлекательный декор поверх темы, без влияния на данные/состояние
-   приложения. Выключается вместе с HALLOWEEN_THEME. */
+   приложения. Вызывается только когда активна тема 'halloween' (см.
+   applySeasonalTheme()). */
 const HALLOWEEN_SPIDER_PHRASES = [
   'Бу! 🕷️ Напугал?',
   'Паучок одобряет твой спайдер гард 🕸️',
@@ -221,9 +237,37 @@ function initHalloweenSpider(){
 }
 
 function initHalloweenFun(){
-  if (!HALLOWEEN_THEME) return;
   initHalloweenPumpkinEgg();
   initHalloweenSpider();
+}
+
+/* ---------- Зима: падающий снег ----------
+   Фиксированный набор снежинок (не бесконечная генерация через setInterval —
+   дешевле для телефона), каждая падает и покачивается по одной и той же CSS
+   keyframe-анимации (winterFall), но со своей случайной скоростью/задержкой/
+   размером/прозрачностью, из-за чего снежинки не выглядят одинаковыми. */
+function initWinterSnow(){
+  if (document.querySelector('.winter-snow-layer')) return; // не создавать второй слой повторно
+  const layer = document.createElement('div');
+  layer.className = 'winter-snow-layer';
+  const glyphs = ['❄', '❅', '❆'];
+  const COUNT = 26;
+  for (let i = 0; i < COUNT; i++){
+    const flake = document.createElement('span');
+    flake.className = 'winter-snowflake';
+    flake.textContent = glyphs[i % glyphs.length];
+    const duration = 9 + Math.random() * 10;
+    // отрицательная задержка — снежинка сразу стартует с середины своего пути,
+    // а не все 26 одновременно сыпятся от самого верха при первой загрузке
+    const delay = -Math.random() * duration;
+    flake.style.left = (Math.random() * 100) + 'vw';
+    flake.style.fontSize = (10 + Math.random() * 14) + 'px';
+    flake.style.opacity = (0.35 + Math.random() * 0.5).toFixed(2);
+    flake.style.animationDuration = duration + 's';
+    flake.style.animationDelay = delay + 's';
+    layer.appendChild(flake);
+  }
+  document.body.appendChild(layer);
 }
 
 /* Access tariffs config for closed group */
@@ -268,6 +312,7 @@ async function loadData(){
       sort_order: (col.sort_order != null && col.sort_order !== '') ? parseInt(col.sort_order, 10) : null,
       course_ids: (col.course_ids || []).map(String)
     })).sort((a, b) => (a.sort_order ?? 999999) - (b.sort_order ?? 999999));
+    applySeasonalTheme(data.theme || 'none');
     await userInit();
     renderAll();
     applyAuthorDeepLink();
@@ -275,6 +320,7 @@ async function loadData(){
   }catch(e){
     console.error('loadData err',e);
     // fallback demo data
+    applySeasonalTheme(LOCAL_FALLBACK_THEME); // бэкенд недоступен (локальная разработка/file://) — показываем тему без него
     loadMockData();
   }
 }
@@ -2010,7 +2056,6 @@ async function checkGlobalAccessAndMaybeShowPaywall(){
 window.addEventListener('DOMContentLoaded', ()=>{
   // init UI
   initTheme();
-  initHalloweenFun();
   initPaywall();
   checkGlobalAccessAndMaybeShowPaywall();
   $('#countInfo').textContent = 'Загрузка...';
