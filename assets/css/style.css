@@ -228,61 +228,64 @@
 
 /* ===== Зима — сезонное оформление =====
    Включается значением темы 'winter' с бэкенда (см. applySeasonalTheme() в
-   app.js) — так же, как и .theme-halloween выше, просто другой набор
-   переменных и декора. */
+   app.js). В отличие от .theme-halloween (намеренно всегда тёмная, это часть
+   "жуткого" образа) — зима НЕ навязывает тёмный фон: меняем только акцентный
+   цвет на ледяной + несколько переменных декора, а светлая/тёмная подложка
+   остаётся той, что выбрана в Telegram ([data-theme="light"]/[data-theme=
+   "dark"], см. applyTelegramTheme() в app.js). Декоративные цвета (снег,
+   гирлянда) заданы отдельно для каждой подложки ниже, т.к. бледно-голубой
+   снег, отлично видимый на тёмном фоне, на светлом просто потеряется. */
 .theme-winter {
-  --accent: #2f8fd9;
-  --accent-hover: #4aa6ea;
-  --accent-rgb: 47, 143, 217;
-  --bg: #0d1b2a;
-  --card: #15263a;
-  --text: #eaf4ff;
-  --text-secondary: #c7dbf0;
-  --muted: #7f9bb8;
-  --border: #253a52;
-  --divider: #1b2e42;
-  --chip-bg: #1b2e42;
-  --tag-bg: rgba(47, 143, 217, 0.18);
-  --topbar-bg: #112236;
-  --nav-bg: #112236;
-  --suggest-bg: #16293d;
-  --mini-card-bg: #16293d;
-  --shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
-  --shadow-focus: 0 0 0 3px rgba(47, 143, 217, 0.35);
+  --accent: #1f8fd6;
+  --accent-hover: #3aa7e8;
+  --accent-rgb: 31, 143, 214;
+  --tag-bg: rgba(31, 143, 214, 0.14);
+  --winter-snow-color: #3f7faf;
+  --winter-snow-glow: rgba(63, 127, 175, .28);
+  --winter-sparkle-color: #d6a93c;
+}
+
+[data-theme="dark"].theme-winter {
+  --winter-snow-color: #eaf6ff;
+  --winter-snow-glow: rgba(170, 215, 255, .6);
+  --winter-sparkle-color: #ffd873;
 }
 
 .theme-winter .launch-splash {
-  background: linear-gradient(160deg, #0d1b2a 0%, #1b3a56 100%);
+  background: linear-gradient(160deg, #eaf5ff 0%, #cfe6fa 100%);
 }
 
 .theme-winter .launch-splash-glow {
-  background: radial-gradient(circle, rgba(165, 219, 255, .4) 0%, rgba(165, 219, 255, .14) 45%, rgba(165, 219, 255, 0) 72%);
+  background: radial-gradient(circle, rgba(63, 127, 175, .32) 0%, rgba(63, 127, 175, .12) 45%, rgba(63, 127, 175, 0) 72%);
 }
 
-.theme-winter .launch-splash-logo-fallback {
-  color: #eaf4ff;
-}
-
-/* Сосульки по нижнему краю шапки — чистый CSS-зигзаг тем же цветом, что и
-   сама шапка, без лишней разметки */
+/* Гирлянда по нижнему краю шапки — провисающий "провод" + лампочки (лёд +
+   золото, по классике зимних витрин: 2 цвета максимум, иначе рябит), мягко
+   мерцают. Один SVG на обе подложки — сами лампочки достаточно насыщенные,
+   чтобы читаться и на светлом, и на тёмном фоне. */
 .theme-winter .topbar::after {
   content: "";
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -9px;
-  height: 9px;
-  background-image:
-    linear-gradient(135deg, transparent 50%, var(--topbar-bg) 50%),
-    linear-gradient(-135deg, transparent 50%, var(--topbar-bg) 50%);
-  background-size: 14px 14px;
+  bottom: -11px;
+  height: 20px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 20'%3E%3Cpath d='M0 3 Q20 15 40 3 Q60 15 80 3' fill='none' stroke='%238aa0b5' stroke-width='1.1' opacity='0.6'/%3E%3Cline x1='20' y1='10' x2='20' y2='13' stroke='%238aa0b5' stroke-width='1' opacity='0.6'/%3E%3Ccircle cx='20' cy='15' r='5' fill='%231f8fd6' opacity='0.3'/%3E%3Ccircle cx='20' cy='15' r='2.4' fill='%2347b4ff'/%3E%3Cline x1='60' y1='10' x2='60' y2='13' stroke='%238aa0b5' stroke-width='1' opacity='0.6'/%3E%3Ccircle cx='60' cy='15' r='5' fill='%23d6a93c' opacity='0.3'/%3E%3Ccircle cx='60' cy='15' r='2.4' fill='%23ffd873'/%3E%3C/svg%3E");
+  background-size: 80px 20px;
   background-repeat: repeat-x;
   background-position: 0 0;
   pointer-events: none;
+  animation: winterGarlandTwinkle 2.6s ease-in-out infinite;
+}
+
+@keyframes winterGarlandTwinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .72; }
 }
 
 /* Падающий снег — фиксированный слой на весь экран, снежинки создаются в
-   initWinterSnow() (app.js), сама анимация падения+раскачивания — чистый CSS */
+   initWinterSnow() (app.js). Большинство — снежинки (падают+покачиваются),
+   часть — искорки (просто мерцают на месте), для живости картинки. */
 .winter-snow-layer {
   position: fixed;
   inset: 0;
@@ -295,11 +298,19 @@
   position: absolute;
   top: 0;
   left: 0;
-  color: #eaf6ff;
-  text-shadow: 0 0 4px rgba(170, 215, 255, .6);
+  color: var(--winter-snow-color);
+  text-shadow: 0 0 4px var(--winter-snow-glow);
   animation-name: winterFall;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
+}
+
+.winter-snowflake--sparkle {
+  color: var(--winter-sparkle-color);
+  text-shadow: 0 0 6px var(--winter-sparkle-color);
+  animation-name: winterFall, winterTwinkle;
+  animation-timing-function: linear, ease-in-out;
+  animation-iteration-count: infinite, infinite;
 }
 
 @keyframes winterFall {
@@ -308,6 +319,11 @@
   50%  { transform: translate(-14px, 50vh) rotate(-8deg); }
   75%  { transform: translate(14px, 75vh) rotate(8deg); }
   100% { transform: translate(0, 110vh) rotate(0deg); }
+}
+
+@keyframes winterTwinkle {
+  0%, 100% { opacity: .25; }
+  50% { opacity: 1; }
 }
 
 html {

@@ -241,30 +241,37 @@ function initHalloweenFun(){
   initHalloweenSpider();
 }
 
-/* ---------- Зима: падающий снег ----------
-   Фиксированный набор снежинок (не бесконечная генерация через setInterval —
-   дешевле для телефона), каждая падает и покачивается по одной и той же CSS
-   keyframe-анимации (winterFall), но со своей случайной скоростью/задержкой/
-   размером/прозрачностью, из-за чего снежинки не выглядят одинаковыми. */
+/* ---------- Зима: падающий снег + искорки ----------
+   Фиксированный набор частиц (не бесконечная генерация через setInterval —
+   дешевле для телефона). Большинство — снежинки, падают и покачиваются по
+   CSS keyframe-анимации (winterFall); примерно каждая седьмая — "искорка"
+   (золотистая, просто мерцает на лету) — чисто для живости, без снега с
+   одной текстурой выглядело слишком ровно и скучно. */
 function initWinterSnow(){
   if (document.querySelector('.winter-snow-layer')) return; // не создавать второй слой повторно
   const layer = document.createElement('div');
   layer.className = 'winter-snow-layer';
-  const glyphs = ['❄', '❅', '❆'];
+  const snowGlyphs = ['❄', '❅', '❆'];
+  const sparkleGlyphs = ['✦', '✨'];
   const COUNT = 26;
   for (let i = 0; i < COUNT; i++){
+    const isSparkle = i % 7 === 0;
     const flake = document.createElement('span');
-    flake.className = 'winter-snowflake';
-    flake.textContent = glyphs[i % glyphs.length];
+    flake.className = 'winter-snowflake' + (isSparkle ? ' winter-snowflake--sparkle' : '');
+    flake.textContent = isSparkle
+      ? sparkleGlyphs[Math.floor(Math.random() * sparkleGlyphs.length)]
+      : snowGlyphs[i % snowGlyphs.length];
     const duration = 9 + Math.random() * 10;
-    // отрицательная задержка — снежинка сразу стартует с середины своего пути,
-    // а не все 26 одновременно сыпятся от самого верха при первой загрузке
+    // отрицательная задержка — частица сразу стартует с середины своего пути,
+    // а не все одновременно сыпятся от самого верха при первой загрузке
     const delay = -Math.random() * duration;
     flake.style.left = (Math.random() * 100) + 'vw';
-    flake.style.fontSize = (10 + Math.random() * 14) + 'px';
+    flake.style.fontSize = (isSparkle ? 8 + Math.random() * 8 : 10 + Math.random() * 14) + 'px';
     flake.style.opacity = (0.35 + Math.random() * 0.5).toFixed(2);
-    flake.style.animationDuration = duration + 's';
-    flake.style.animationDelay = delay + 's';
+    flake.style.animationDuration = isSparkle
+      ? duration + 's, ' + (1.4 + Math.random() * 1.4) + 's'
+      : duration + 's';
+    flake.style.animationDelay = isSparkle ? delay + 's, ' + (-Math.random() * 2) + 's' : delay + 's';
     layer.appendChild(flake);
   }
   document.body.appendChild(layer);
